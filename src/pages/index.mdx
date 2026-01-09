@@ -1,0 +1,55 @@
+import { Cards } from 'vocs'
+
+:::warning
+**Testnet migration:** We've launched a new testnet. You'll need to update your RPC configuration and redeploy any contracts. The old testnet will be deprecated on March 8th. [See details below](#testnet-migration).
+:::
+
+# Tempo [Documentation, integration guides, and protocol specifications]
+
+## Welcome to Tempo! 
+
+Tempo is a general-purpose blockchain optimized for payments. Tempo is designed to be a low-cost, high-throughput blockchain with user and developer features that we believe should be core to a modern payment system.
+
+Tempo was designed in close collaboration with an exceptional group of [design partners](https://tempo.xyz/ecosystem) who are helping to validate the system against real payment workloads.
+
+Whether you're new to stablecoins, ready to start building, or looking for partners to help you integrate, these docs will help you get started with Tempo.
+
+<Cards>
+  <Cards.Card
+    description="Start here to understand what they are, why they matter, and the real-world payment use cases they enable."
+    to="/learn"
+    icon="lucide:book-open"
+    title="Learn About Stablecoins"
+  />
+  <Cards.Card
+    description="Connect to the testnet, get faucet funds, and start building with our SDKs and guides."
+    to="/quickstart/integrate-tempo"
+    icon="lucide:rocket"
+    title="Integrate Tempo Testnet"
+  />
+  <Cards.Card
+    description="Work with our ecosystem partners for stablecoin issuance, custody, compliance, orchestration, and infrastructure."
+    to="/learn/partners"
+    icon="lucide:users"
+    title="Build With Partners"
+  />
+  <Cards.Card
+    description="Connect with the Tempo team to discuss partnerships, integration opportunities, or opportunities to collaborate."
+    to="mailto:partners@tempo.xyz"
+    icon="lucide:mail"
+    title="Get In Touch"
+  />
+</Cards>
+
+## Testnet Migration
+
+We've launched a new testnet to better align with our mainnet release candidate and provide faster feature release cycles. The old testnet will be deprecated on **March 8th, 2025**.
+
+**What you need to do:**
+
+1. **Update your RPC URL** to `https://rpc.moderato.tempo.xyz`
+2. **Update your chain ID** to `42431`
+3. **Redeploy any contracts** to the new testnet
+4. **Reset any databases or indexers** that depend on old testnet data
+
+See [Connection Details](/quickstart/connection-details#direct-connection-details) for the full configuration.
