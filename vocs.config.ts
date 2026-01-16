@@ -361,7 +361,7 @@ export default defineConfig({
               },
               {
                 text: 'Reference Implementation',
-                link: 'https://github.com/tempoxyz/tempo/blob/main/docs/specs/src/StablecoinExchange.sol',
+                link: 'https://github.com/tempoxyz/tempo/blob/main/docs/specs/src/stablecoinDex.sol',
               },
               {
                 text: 'Rust Implementation',

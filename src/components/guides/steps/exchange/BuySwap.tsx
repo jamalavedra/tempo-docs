@@ -25,6 +25,7 @@ export function BuySwap({ onSuccess }: { onSuccess?: () => void }) {
     amountOut: amount,
     query: {
       enabled: !!address,
+      // @ts-expect-error: FIXME: pick type in wagmi
       refetchInterval: 1000,
     },
   })
@@ -51,7 +52,7 @@ export function BuySwap({ onSuccess }: { onSuccess?: () => void }) {
 
   const calls = [
     Actions.token.approve.call({
-      spender: Addresses.stablecoinExchange,
+      spender: Addresses.stablecoinDex,
       amount: maxAmountIn,
       token: betaUsd,
     }),
