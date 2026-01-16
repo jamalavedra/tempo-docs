@@ -14,6 +14,7 @@ export default defineConfig({
       McpSource.github({ repo: 'foundry-rs/foundry' }),
       McpSource.github({ repo: 'wevm/viem' }),
       McpSource.github({ repo: 'wevm/wagmi' }),
+      McpSource.github({ repo: 'tempoxyz/tempo-ts' }),
     ],
   },
   // TODO: parameterize
