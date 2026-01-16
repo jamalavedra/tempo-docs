@@ -1,4 +1,4 @@
-import { Changelog, defineConfig } from 'vocs/config'
+import { Changelog, defineConfig, McpSource } from 'vocs/config'
 
 export default defineConfig({
   changelog: Changelog.github({ prereleases: true, repo: 'tempoxyz/tempo' }),
@@ -6,6 +6,16 @@ export default defineConfig({
   title: 'Tempo',
   titleTemplate: '%s ⋅ Tempo',
   description: 'Documentation for the Tempo network and protocol specifications',
+  mcp: {
+    enabled: true,
+    sources: [
+      McpSource.github({ repo: 'tempoxyz/tempo' }),
+      McpSource.github({ repo: 'paradigmxyz/reth' }),
+      McpSource.github({ repo: 'foundry-rs/foundry' }),
+      McpSource.github({ repo: 'wevm/viem' }),
+      McpSource.github({ repo: 'wevm/wagmi' }),
+    ],
+  },
   // TODO: parameterize
   baseUrl: 'docs-next-theta.vercel.app',
   // TODO: parameterize
