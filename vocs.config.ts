@@ -1,20 +1,17 @@
 import { defineConfig } from 'vocs/config'
 
-const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined
-
 export default defineConfig({
   checkDeadlinks: false,
   title: 'Tempo',
   titleTemplate: '%title ⋅ Tempo',
   description: 'Documentation for the Tempo network and protocol specifications',
-  baseUrl,
-  ogImageUrl:
-    baseUrl !== undefined
-      ? (path) =>
-          path === '/'
-            ? `${baseUrl}/og-docs.png`
-            : `${baseUrl}/api/og?title=%title&description=%description`
-      : undefined,
+  // TODO: parameterize
+  baseUrl: 'docs-next-theta.vercel.app',
+  // TODO: parameterize
+  ogImageUrl: (path: string) =>
+    path === '/'
+      ? `docs-next-theta.vercel.app/og-docs.png`
+      : `docs-next-theta.vercel.app/api/og?title=%title&description=%description`,
   logoUrl: {
     light: '/lockup-light.svg',
     dark: '/lockup-dark.svg',
