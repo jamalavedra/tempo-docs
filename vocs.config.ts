@@ -3,7 +3,7 @@ import { defineConfig } from 'vocs/config'
 export default defineConfig({
   checkDeadlinks: false,
   title: 'Tempo',
-  titleTemplate: '%title ⋅ Tempo',
+  titleTemplate: '%s ⋅ Tempo',
   description: 'Documentation for the Tempo network and protocol specifications',
   // TODO: parameterize
   baseUrl: 'docs-next-theta.vercel.app',
