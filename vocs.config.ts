@@ -18,12 +18,12 @@ export default defineConfig({
     ],
   },
   // TODO: parameterize
-  baseUrl: 'docs-next-theta.vercel.app',
+  baseUrl: 'https://docs-next-theta.vercel.app',
   // TODO: parameterize
   ogImageUrl: (path: string) =>
     path === '/'
-      ? `docs-next-theta.vercel.app/og-docs.png`
-      : `docs-next-theta.vercel.app/api/og?title=%title&description=%description`,
+      ? `https://docs-next-theta.vercel.app/og-docs.png`
+      : `https://docs-next-theta.vercel.app/api/og?title=%title&description=%description`,
   logoUrl: {
     light: '/lockup-light.svg',
     dark: '/lockup-dark.svg',
