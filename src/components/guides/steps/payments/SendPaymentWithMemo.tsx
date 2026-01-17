@@ -1,3 +1,5 @@
+'use client'
+
 import * as React from 'react'
 import { fromHex, isAddress, pad, parseUnits, stringToHex } from 'viem'
 import { Abis } from 'viem/tempo'
