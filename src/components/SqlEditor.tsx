@@ -1,8 +1,10 @@
 'use client'
-import { Editor } from '@monaco-editor/react'
 import type * as Monaco from 'monaco-editor'
 import * as React from 'react'
-import { format } from 'sql-formatter'
+
+const Editor = React.lazy(() =>
+  import('@monaco-editor/react').then((mod) => ({ default: mod.Editor })),
+)
 
 // Global flag to ensure completion provider is only registered once
 let completionProviderRegistered = false
@@ -285,10 +287,11 @@ export function SqlEditor(props: SqlEditorProps) {
     }
 
     // Add Cmd/Ctrl+; shortcut for formatting
-    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Semicolon, () => {
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Semicolon, async () => {
       const currentValue = editor.getValue()
       if (currentValue) {
         try {
+          const { format } = await import('sql-formatter')
           const formatted = format(currentValue, {
             language: 'postgresql',
             keywordCase: 'lower',
@@ -326,45 +329,56 @@ export function SqlEditor(props: SqlEditorProps) {
 
   return (
     <div className={`${className} ${isFocused ? 'ring-1 ring-accent' : ''}`}>
-      <Editor
-        height={editorHeight}
-        defaultLanguage="sql"
-        value={value}
-        onChange={(newValue) => onChange(newValue || '')}
-        theme={isDark ? 'sql-custom-dark' : 'sql-custom-light'}
-        beforeMount={handleEditorWillMount}
-        onMount={handleEditorDidMount}
-        options={{
-          readOnly: readOnly || disabled,
-          minimap: { enabled: false },
-          lineNumbers: 'on',
-          fontSize: 12,
-          fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-          wordWrap: 'on',
-          scrollBeyondLastLine: false,
-          automaticLayout: true,
-          tabSize: 2,
-          insertSpaces: true,
-          suggestOnTriggerCharacters: true,
-          quickSuggestions: true,
-          acceptSuggestionOnCommitCharacter: true,
-          acceptSuggestionOnEnter: 'on',
-          scrollbar:
-            readOnly || disabled
-              ? {
-                  alwaysConsumeMouseWheel: false,
-                  handleMouseWheel: false,
-                  vertical: 'hidden',
-                  horizontal: 'hidden',
-                  verticalScrollbarSize: 0,
-                  horizontalScrollbarSize: 0,
-                }
-              : {
-                  vertical: 'auto',
-                  horizontal: 'auto',
-                },
-        }}
-      />
+      <React.Suspense
+        fallback={
+          <div
+            style={{ height: editorHeight, minHeight }}
+            className="flex items-center justify-center bg-gray2 text-[13px] text-gray9"
+          >
+            Loading editor...
+          </div>
+        }
+      >
+        <Editor
+          height={editorHeight}
+          defaultLanguage="sql"
+          value={value}
+          onChange={(newValue) => onChange(newValue || '')}
+          theme={isDark ? 'sql-custom-dark' : 'sql-custom-light'}
+          beforeMount={handleEditorWillMount}
+          onMount={handleEditorDidMount}
+          options={{
+            readOnly: readOnly || disabled,
+            minimap: { enabled: false },
+            lineNumbers: 'on',
+            fontSize: 12,
+            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+            wordWrap: 'on',
+            scrollBeyondLastLine: false,
+            automaticLayout: true,
+            tabSize: 2,
+            insertSpaces: true,
+            suggestOnTriggerCharacters: true,
+            quickSuggestions: true,
+            acceptSuggestionOnCommitCharacter: true,
+            acceptSuggestionOnEnter: 'on',
+            scrollbar:
+              readOnly || disabled
+                ? {
+                    alwaysConsumeMouseWheel: false,
+                    handleMouseWheel: false,
+                    vertical: 'hidden',
+                    horizontal: 'hidden',
+                    verticalScrollbarSize: 0,
+                    horizontalScrollbarSize: 0,
+                  }
+                : {
+                    vertical: 'auto',
+                    horizontal: 'auto',
+                  },
+          }}
+        />
+      </React.Suspense>
     </div>
   )
 }
