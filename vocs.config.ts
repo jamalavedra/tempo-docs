@@ -604,7 +604,7 @@ export default defineConfig({
       text: 'Docs',
       link: '/',
     },
-    { text: 'Changelog', link: '/changelog' },
+
     { text: 'Ecosystem', link: 'https://tempo.xyz/ecosystem' },
     { text: 'Blog', link: 'https://tempo.xyz/blog' },
   ],
