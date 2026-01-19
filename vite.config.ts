@@ -7,7 +7,7 @@ import { vocs } from 'vocs/vite'
 export default defineConfig({
   plugins: [vocs(), react(), tempoNode()],
   ssr: {
-    noExternal: ['@iconify-json/lucide', '@iconify-json/simple-icons'],
+    noExternal: ['vocs > @iconify-json/lucide', 'vocs > @iconify-json/simple-icons'],
   },
 })
 
