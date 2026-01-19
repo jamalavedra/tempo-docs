@@ -1,7 +1,7 @@
 'use client'
 import * as React from 'react'
 import { isAddress, isHash } from 'viem'
-import { tempoTestnet } from 'viem/chains'
+import { tempoModerato } from 'viem/chains'
 import type * as z from 'zod/mini'
 import LucideExternalLink from '~icons/lucide/external-link'
 import { Container } from './Container'
@@ -64,11 +64,11 @@ type IndexSupplyQueryProps = {
 }
 
 function getExplorerHost() {
-  const { VITE_ENVIRONMENT, VITE_EXPLORER_OVERRIDE } = import.meta.env
-  if (VITE_ENVIRONMENT !== 'testnet' && VITE_EXPLORER_OVERRIDE !== undefined) {
+  const { VITE_TEMPO_ENV, VITE_EXPLORER_OVERRIDE } = import.meta.env
+  if (VITE_TEMPO_ENV !== 'testnet' && VITE_EXPLORER_OVERRIDE !== undefined) {
     return VITE_EXPLORER_OVERRIDE
   }
-  return tempoTestnet.blockExplorers.default.url
+  return tempoModerato.blockExplorers.default.url
 }
 
 function classifyHash(value: string | number | boolean | null): {

@@ -47,15 +47,10 @@ type RunQueryOptions = {
 }
 
 export async function runIndexSupplyQuery(query: string, options: RunQueryOptions = {}) {
-  const token = import.meta.env.VITE_FRONTEND_API_TOKEN
-
-  if (!token) throw new Error('VITE_FRONTEND_API_TOKEN is not configured')
-
   const response = await fetch('/api/index-supply', {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
-      'x-api-token': token,
     },
     body: JSON.stringify({
       query: query.replace(/\s+/g, ' ').trim(),

@@ -4,7 +4,7 @@ import type { VariantProps } from 'cva'
 import * as React from 'react'
 import type { Address, BaseError } from 'viem'
 import { formatUnits } from 'viem'
-import { tempoTestnet } from 'viem/chains'
+import { tempoModerato } from 'viem/chains'
 import { useAccount, useConnect, useConnections, useConnectors, useDisconnect } from 'wagmi'
 import { Hooks } from 'wagmi/tempo'
 import LucideCheck from '~icons/lucide/check'
@@ -33,13 +33,12 @@ export function useWebAuthnConnector() {
 }
 
 function getExplorerHost() {
-  const { VITE_ENVIRONMENT, VITE_EXPLORER_OVERRIDE } = import.meta.env
+  const { VITE_TEMPO_ENV, VITE_EXPLORER_OVERRIDE } = import.meta.env
 
-  if (VITE_ENVIRONMENT !== 'testnet' && VITE_EXPLORER_OVERRIDE !== undefined) {
+  if (VITE_TEMPO_ENV !== 'testnet' && VITE_EXPLORER_OVERRIDE !== undefined)
     return VITE_EXPLORER_OVERRIDE
-  }
 
-  return tempoTestnet.blockExplorers.default.url
+  return tempoModerato.blockExplorers.default.url
 }
 
 export function ExplorerLink({ hash }: { hash: string }) {

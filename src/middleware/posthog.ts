@@ -45,8 +45,8 @@ export default function test(): MiddlewareHandler {
     if (!matchedCrawler) return next()
 
     const url = new URL(c.req.url)
-    const posthogKey = import.meta.env.POSTHOG_KEY
-    const posthogHost = import.meta.env.POSTHOG_HOST || 'https://us.i.posthog.com'
+    const posthogKey = import.meta.env.VITE_POSTHOG_KEY
+    const posthogHost = import.meta.env.VITE_POSTHOG_HOST || 'https://us.i.posthog.com'
 
     if (!posthogKey) return next()
 

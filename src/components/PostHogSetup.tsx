@@ -5,8 +5,8 @@ import { useEffect } from 'react'
 
 function PostHogInitializer() {
   useEffect(() => {
-    const posthogKey = import.meta.env.VITE_PUBLIC_POSTHOG_KEY
-    const posthogHost = import.meta.env.VITE_PUBLIC_POSTHOG_HOST
+    const posthogKey = import.meta.env.VITE_POSTHOG_KEY
+    const posthogHost = import.meta.env.VITE_POSTHOG_HOST
 
     if (!posthogKey || !posthogHost) return
 
@@ -29,8 +29,8 @@ function PostHogInitializer() {
 }
 
 export default function PostHogSetup() {
-  const posthogKey = import.meta.env.VITE_PUBLIC_POSTHOG_KEY
-  const posthogHost = import.meta.env.VITE_PUBLIC_POSTHOG_HOST
+  const posthogKey = import.meta.env.VITE_POSTHOG_KEY
+  const posthogHost = import.meta.env.VITE_POSTHOG_HOST
 
   if (!posthogKey || !posthogHost) return null
 
