@@ -5,11 +5,23 @@ import { vocs } from 'vocs/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [vocs(), react(), tempoNode()],
-  ssr: {
-    noExternal: ['vocs > @iconify-json/lucide', 'vocs > @iconify-json/simple-icons'],
-  },
+  plugins: [vocs(), react(), tempoNode(), patchIconifyImports()],
 })
+
+function patchIconifyImports(): Plugin {
+  return {
+    name: 'patch-iconify-imports',
+    enforce: 'pre',
+    transform(code, id) {
+      if (!id.includes('icons') || !code.includes('@vite-ignore')) return
+
+      return code.replace(
+        /await import\(\s*\/\*\s*@vite-ignore\s*\*\/\s*`@iconify-json\/\$\{collection\}`\s*\)/g,
+        `(collection === 'lucide' ? await import('@iconify-json/lucide') : collection === 'simple-icons' ? await import('@iconify-json/simple-icons') : await Promise.reject(new Error('Unknown collection')))`,
+      )
+    },
+  }
+}
 
 function tempoNode(): Plugin {
   return {
