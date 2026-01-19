@@ -18,7 +18,7 @@ export default function handler(request: Request) {
       <div
         style={{
           position: 'absolute',
-          top: '60px',
+          top: '80px',
           left: '80px',
           display: 'flex',
           alignItems: 'center',
@@ -27,8 +27,8 @@ export default function handler(request: Request) {
       >
         {/** biome-ignore lint/a11y/noSvgWithoutTitle: _ */}
         <svg
-          width="148"
-          height="35"
+          width="296"
+          height="70"
           viewBox="0 0 148 35"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
