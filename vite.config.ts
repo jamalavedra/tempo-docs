@@ -26,7 +26,6 @@ function tempoNode(): Plugin {
   }
 }
 
-
 function syncTips(): Plugin {
   const repo = 'tempoxyz/tempo'
   const outputDir = 'src/pages/protocol/tips'
