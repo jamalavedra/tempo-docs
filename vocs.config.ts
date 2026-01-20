@@ -17,13 +17,11 @@ export default defineConfig({
       McpSource.github({ repo: 'tempoxyz/tempo-ts' }),
     ],
   },
-  // TODO: parameterize
-  baseUrl: 'https://docs-next-theta.vercel.app',
-  // TODO: parameterize
+  baseUrl: 'https://docs.tempo.xyz',
   ogImageUrl: (path: string) =>
     path === '/'
-      ? `https://docs-next-theta.vercel.app/og-docs.png`
-      : `https://docs-next-theta.vercel.app/api/og?title=%title&description=%description`,
+      ? `https://docs.tempo.xyz/og-docs.png`
+      : `https://docs.tempo.xyz/api/og?title=%title&description=%description`,
   logoUrl: {
     light: '/lockup-light.svg',
     dark: '/lockup-dark.svg',
