@@ -677,6 +677,11 @@ export default defineConfig({
       destination: '/guide/payments/sponsor-user-fees',
       status: 301,
     },
+    {
+      source: '/quickstart/tip20',
+      destination: '/protocol/tip20/overview',
+      status: 301,
+    },
   ],
   twoslash: {
     twoslashOptions: {
