@@ -672,6 +672,11 @@ export default defineConfig({
       source: '/sdk/typescript/prool',
       destination: '/sdk/typescript/prool/setup',
     },
+    {
+      source: '/guide/use-accounts/fee-sponsorship',
+      destination: '/guide/payments/sponsor-user-fees',
+      status: 301,
+    },
   ],
   twoslash: {
     twoslashOptions: {
