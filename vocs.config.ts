@@ -94,6 +94,10 @@ export default defineConfig({
             text: 'Wallet Developers',
             link: '/quickstart/wallet-developers',
           },
+          {
+            text: 'AI Support',
+            link: '/guide/ai-support',
+          },
         ],
       },
       {
