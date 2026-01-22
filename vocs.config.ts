@@ -1,4 +1,4 @@
-import { Changelog, defineConfig, McpSource } from 'vocs/config'
+import { Changelog, defineConfig, Feedback, McpSource } from 'vocs/config'
 
 const baseUrl = (() => {
   if (process.env.VERCEL_ENV === 'production')
@@ -13,6 +13,7 @@ export default defineConfig({
   title: 'Tempo',
   titleTemplate: '%s ⋅ Tempo',
   description: 'Documentation for the Tempo network and protocol specifications',
+  feedback: Feedback.slack(),
   mcp: {
     enabled: true,
     sources: [
