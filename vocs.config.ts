@@ -95,8 +95,8 @@ export default defineConfig({
             link: '/quickstart/wallet-developers',
           },
           {
-            text: 'AI Support',
-            link: '/guide/ai-support',
+            text: 'Building with AI',
+            link: '/guide/building-with-ai',
           },
         ],
       },
@@ -639,6 +639,10 @@ export default defineConfig({
       source: '/stablecoin-exchange/:path*',
       destination: '/stablecoin-dex/:path*',
       status: 301,
+    },
+    {
+      source: '/guide/ai-support',
+      destination: '/guide/building-with-ai',
     },
     {
       source: '/guide',
