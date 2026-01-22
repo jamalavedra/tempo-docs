@@ -624,12 +624,7 @@ export default defineConfig({
     },
     {
       source: '/errors/tx/SubblockNonceKey',
-      destination: '/protocol/blockspace/subblock-specification#4-block-validity-rules',
-    },
-    {
-      source: '/protocol/blockspace/sub-block-specification',
-      destination: '/protocol/blockspace/subblock-specification',
-      status: 301,
+      destination: '/protocol/blockspace/sub-block-specification#4-block-validity-rules',
     },
     {
       source: '/stablecoin-exchange/:path*',
