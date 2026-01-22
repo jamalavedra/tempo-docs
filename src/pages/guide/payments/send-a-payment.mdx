@@ -120,9 +120,9 @@ function SendPaymentWithMemo() {
       <button // [!code hl]
         type="submit" // [!code hl]
         disabled={sendPayment.isPending} // [!code hl]
-      > // [!code hl]
-        Send Payment // [!code hl]
-      </button> // [!code hl]
+      > {/* [!code hl] */}
+        Send Payment {/* [!code hl] */}
+      </button> {/* [!code hl] */}
     </form>
   )
 }
@@ -153,10 +153,10 @@ function SendPaymentWithMemo() {
     <>
       {/* ... your payment form ... */}
       {sendPayment.data && ( // [!code ++]
-        <a href={`https://explore.tempo.xyz/tx/${sendPayment.data.receipt.transactionHash}`}> // [!code ++]
-          View receipt // [!code ++]
-        </a> // [!code ++]
-      )} // [!code ++]
+        <a href={`https://explore.tempo.xyz/tx/${sendPayment.data.receipt.transactionHash}`}> {/* [!code ++] */}
+          View receipt {/* [!code ++] */}
+        </a> {/* [!code ++] */}
+      )} {/* [!code ++] */}
     </>
   )
 }

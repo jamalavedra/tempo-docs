@@ -112,9 +112,9 @@ function ManageFeeLiquidity() {
           to: address, // [!code ++]
           feeToken: validatorToken, // [!code ++]
         }) // [!code ++]
-      }}> // [!code ++]
-      Add Liquidity // [!code ++]
-      </button> // [!code ++]
+      }}> {/* [!code ++] */}
+      Add Liquidity {/* [!code ++] */}
+      </button> {/* [!code ++] */}
     </div>
   )
 }
@@ -175,7 +175,7 @@ function ManageFeeLiquidity() {
 
   return (
     <div>
-      <div>LP token balance: {formatUnits(balance ?? 0n, 6)}</div>  // [!code ++]
+      <div>LP token balance: {formatUnits(balance ?? 0n, 6)}</div>  {/* [!code ++] */}
       <div>User token reserves: {formatUnits(pool?.reserveUserToken ?? 0n, 6)}</div>
       <div>Validator token reserves: {formatUnits(pool?.reserveValidatorToken ?? 0n, 6)}</div>
       <button type="button" onClick={() => {
@@ -274,9 +274,9 @@ function ManageFeeLiquidity() {
           liquidity: parseUnits('10', 6), // Burn 10 LP tokens // [!code ++]
           to: address, // [!code ++]
         }) // [!code ++]
-      }}> // [!code ++]
-      Remove Liquidity // [!code ++]
-      </button> // [!code ++]
+      }}> {/* [!code ++] */}
+      Remove Liquidity {/* [!code ++] */}
+      </button> {/* [!code ++] */}
     </div>
   )
 }
