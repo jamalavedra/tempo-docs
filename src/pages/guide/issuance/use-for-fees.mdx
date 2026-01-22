@@ -189,9 +189,9 @@ export function PayWithIssuedToken() {
         disabled={!address || !isValidRecipient || sendPayment.isPending} // [!code hl]
         onClick={handleTransfer} // [!code hl]
         type="button" // [!code hl]
-      > {/* [!code hl] */}
-        {sendPayment.isPending ? 'Sending...' : 'Send'} {/* [!code hl] */}
-      </button> {/* [!code hl] */}
+      > // [!code hl]
+      {sendPayment.isPending ? 'Sending...' : 'Send'} // [!code hl]
+      </button> // [!code hl]
     </>
   )
 }
