@@ -13,7 +13,7 @@ Tempo uses Simplex Consensus, implemented by [Commonware](https://www.commonware
 
 ### Block Production
 
-Blocks are produced approximately every 0.5 seconds under normal network conditions. Proposer selection follows a round-robin pattern among active validators. Once a block is finalized, it cannot be reverted.
+Blocks are produced approximately every 600ms under normal network conditions (500ms builder loop plus network latency and block validation). Proposer selection uses a VRF (Verifiable Random Function) for random leader election, providing DoS protection and MEV resistance. Once a block is finalized, it cannot be reverted.
 
 ### Deterministic Finality
 
@@ -55,3 +55,8 @@ The protocol prioritizes safety over liveness. It will halt rather than produce 
 ## For Integrators
 
 Treat finalized blocks as irreversible for settlement purposes. No additional confirmations are needed after finality. Query finalized blocks using `eth_getBlockByNumber` with the `finalized` tag.
+
+## Further Reading
+
+- [Commonware Simplex Documentation](https://docs.rs/commonware-consensus/0.0.65/commonware_consensus/simplex/)
+- [Simplex with BLS12-381 Threshold Scheme](https://docs.rs/commonware-consensus/0.0.65/commonware_consensus/simplex/index.html#schemebls12381_threshold)
