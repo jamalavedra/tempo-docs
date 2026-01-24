@@ -3,6 +3,7 @@ title: View the Orderbook
 description: Inspect Tempo's onchain orderbook using SQL queries. View spreads, order depth, individual orders, and recent trade prices with indexed data.
 ---
 
+import { Cards, Card } from 'vocs'
 import { IndexSupplyQuery } from '../../../components/IndexSupplyQuery'
 
 
@@ -189,3 +190,20 @@ This query joins order fill events with their corresponding placement details to
   LIMIT 10`}
   signatures={["OrderFilled", "OrderPlaced"]}
 />
+
+## Learning Resources
+
+<Cards>
+  <Card
+    description="Learn how to execute swaps against the orderbook"
+    to="/guide/stablecoin-dex/executing-swaps"
+    icon="lucide:arrow-left-right"
+    title="Executing Swaps"
+  />
+  <Card
+    description="Understand the Stablecoin DEX protocol specification"
+    to="/protocol/exchange"
+    icon="lucide:file-text"
+    title="Stablecoin DEX Protocol"
+  />
+</Cards>

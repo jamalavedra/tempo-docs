@@ -3,6 +3,8 @@ title: Scheduled Transactions
 description: Execute transactions within specific time windows using validAfter and validBefore timestamps. Build vesting schedules, time-limited offers, and delayed execution flows.
 ---
 
+import { Cards, Card } from 'vocs'
+
 # Scheduled Transactions
 
 Execute transactions only within a specific time window using `validAfter` and `validBefore` timestamps.
@@ -90,3 +92,20 @@ The block timestamp is set by validators and may vary slightly. For critical tim
 ## Technical Details
 
 For complete specifications on timestamp validation, see the [Tempo Transaction](/protocol/transactions/spec-tempo-transaction) type specification.
+
+## Learning Resources
+
+<Cards>
+  <Card
+    description="Complete technical specification for Tempo Transactions including time bounds"
+    to="/protocol/transactions/spec-tempo-transaction"
+    icon="lucide:file-text"
+    title="TempoTransaction Specification"
+  />
+  <Card
+    description="Learn about batch transactions to combine scheduled operations"
+    to="/guide/use-accounts/batch-transactions"
+    icon="lucide:layers"
+    title="Batch Transactions"
+  />
+</Cards>

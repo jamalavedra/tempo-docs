@@ -3,6 +3,8 @@ title: Batch Transactions
 description: Execute multiple operations atomically in a single Tempo transaction. Reduce gas costs, prevent partial failures, and improve UX with native batching.
 ---
 
+import { Cards, Card } from 'vocs'
+
 # Batch Transactions
 
 One of the most powerful features of the [Tempo Transaction](/protocol/transactions/spec-tempo-transaction) type is batching multiple operations into a single transaction. This allows you to execute several actions atomically (i.e., they all succeed or all fail together). This helps reduce gas costs, prevents partial failures, and creates better user experiences by combining multiple steps into one transaction.
@@ -66,4 +68,21 @@ pub struct Call {
     input: Bytes,    // Calldata for the call
 }
 ```
+
+## Learning Resources
+
+<Cards>
+  <Card
+    description="Complete technical specification for Tempo Transactions and batching"
+    to="/protocol/transactions/spec-tempo-transaction"
+    icon="lucide:file-text"
+    title="TempoTransaction Specification"
+  />
+  <Card
+    description="Learn about sending parallel transactions using nonce keys"
+    to="/guide/payments/send-parallel-transactions"
+    icon="lucide:layers"
+    title="Send Parallel Transactions"
+  />
+</Cards>
 

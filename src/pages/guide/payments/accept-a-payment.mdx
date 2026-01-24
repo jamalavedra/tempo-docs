@@ -3,6 +3,7 @@ title: Accept a Payment
 description: Accept stablecoin payments in your application. Verify transactions, listen for transfer events, and reconcile payments using memos.
 ---
 
+import { Cards, Card } from 'vocs'
 import * as Demo from '../../../components/guides/Demo.tsx'
 import * as Step from '../../../components/guides/steps'
 import * as Token from '../../../components/guides/tokens'
@@ -250,3 +251,20 @@ const { receipt } = await client.dex.sellSync({
 
 - **[Send a payment](/guide/payments/send-a-payment)** to learn how to send payments
 - Learn more about [Exchange](/guide/stablecoin-dex) for cross-stablecoin payments
+
+## Learning Resources
+
+<Cards>
+  <Card
+    description="Learn more about TIP-20 token transfers and memos"
+    to="/protocol/tip20/overview"
+    icon="lucide:coins"
+    title="TIP-20 Token Standard"
+  />
+  <Card
+    description="Explore TypeScript SDK actions for payments"
+    to="/sdk/typescript"
+    icon="lucide:code"
+    title="TypeScript SDK"
+  />
+</Cards>
