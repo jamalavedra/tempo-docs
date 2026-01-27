@@ -527,6 +527,10 @@ export default defineConfig({
             text: 'Running a validator',
             link: '/guide/node/validator',
           },
+          {
+            text: 'Operating your validator',
+            link: '/guide/node/operate-validator',
+          },
         ],
       },
       // {
