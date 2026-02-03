@@ -4,13 +4,17 @@ description: Quote tokens determine trading pairs on Tempo's DEX. Each TIP-20 sp
 
 # Quote Tokens
 
-Each USD TIP-20 on Tempo specifies a single other USD TIP-20 as its quote token. The quote token is the token it trades against on the [stablecoin exchange](/protocol/exchange/spec). This guarantees exactly one path between any two tokens, reducing liquidity fragmentation and simplifying routing.
-
-Tokens can choose any other USD TIP-20 as their quote token. Tempo provides pathUSD as an optional neutral quote token that other stablecoins can use. Use of pathUSD is not required. Tokens can list any other token as their quote token.
+Each USD TIP-20 on Tempo can choose any other USD TIP-20 as its quote token—the token it is paired against on the native decentralized exchange. This guarantees that there is one path between any two tokens, which reduces fragmentation of liquidity and simplifies routing.
 
 ## pathUSD
 
-pathUSD is a USD-denominated stablecoin that can be used as a quote token on Tempo's stablecoin exchange. It is the first TIP-20 deployed to the chain and serves as the fallback gas token when the user or validator does not specify one. pathUSD is not intended to compete as a consumer-facing stablecoin.
+pathUSD is a USD-denominated stablecoin that can be used as a quote token on Tempo's decentralized exchange. It is the first stablecoin deployed to the chain, and is used as a fallback gas token when the user or validator does not specify a gas token. Use of pathUSD is optional.
+
+### Motivation
+
+While on other chains, most liquidity accrues to a few stablecoins, or even one, Tempo allows you to choose which stablecoin to use as your quote token. As one option, you can select pathUSD, a USD-denominated stablecoin. PathUSD is not meant to compete as a consumer-facing stablecoin. Use of pathUSD is optional, and tokens are able to list any other token as their quote token if they choose.
+
+pathUSD can also be accepted as a fee token by validators.
 
 ### Contract
 
