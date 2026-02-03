@@ -6,19 +6,6 @@ description: Set up and run a Tempo RPC node for API access. Download snapshots,
 
 RPC nodes provide API access to the Tempo network without participating in consensus.
 
-## What an RPC Node Does
-
-An RPC node running in follow mode is a **full node**. It:
-
-- Fetches blocks from a trusted RPC endpoint
-- Executes every transaction locally through the EVM
-- Validates each block after execution
-- Stores complete block data and maintains full state
-
-The only trust assumption is block ordering—your node trusts the RPC endpoint to provide the correct sequence of blocks. All execution and validation happens locally on your machine.
-
-By default, RPC nodes run in archive mode, meaning they do not prune historical state.
-
 ## Quick Start
 
 ```bash /dev/null/quickstart.sh#L1-15
@@ -31,6 +18,10 @@ tempo node \
   --http --http.port 8545 \
   --http.api eth,net,web3,txpool,trace
 ```
+
+An RPC node running in follow mode is a **full node**. It fetches blocks from a trusted RPC endpoint, executes every transaction locally through the EVM, validates each block after execution, and stores complete block data with full state. The only trust assumption is block ordering: your node trusts the RPC endpoint to provide the correct sequence of blocks. All execution and validation happens locally on your machine.
+
+By default, RPC nodes run in archive mode, meaning they do not prune historical state.
 
 ## Manually downloading snapshots
 
