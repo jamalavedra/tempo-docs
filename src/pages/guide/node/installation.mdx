@@ -12,6 +12,7 @@ The versions across networks may not be compatible, as such, please consult the 
 
 | Network  | Version |
 |----------|---------|
+| Mainnet | v1.1.0 |
 | Moderato (Testnet) | v1.1.0 |
 | Andantino (Deprecated Testnet) | v0.8.2 |
 
@@ -51,7 +52,7 @@ docker logs tempo
 
 ## Verifying Releases
 
-All release artifacts are cryptographically signed starting after **v1.1.0**. We recommend verifying signatures before running any binary.
+All release artifacts are cryptographically signed starting after **v1.1.1**. We recommend verifying signatures before running any binary.
 
 ### Binary Signatures (GPG)
 
@@ -93,7 +94,7 @@ G4OIGIHqFwKSCA==
 
 ### Docker Image Signatures (Cosign)
 
-Docker images are signed with [Cosign](https://docs.sigstore.dev/cosign/overview/) using keyless signing via GitHub Actions OIDC.
+Docker images are signed with [Cosign](https://docs.sigstore.dev/cosign/signing/overview/) using keyless signing via GitHub Actions OIDC.
 
 To verify a Docker image:
 
