@@ -2,12 +2,18 @@ import * as fs from 'node:fs/promises'
 import * as path from 'node:path'
 import react from '@vitejs/plugin-react'
 import { Instance } from 'prool'
-import { defineConfig, type Plugin } from 'vite'
+import { defineConfig, loadEnv, type Plugin } from 'vite'
 import { vocs } from 'vocs/vite'
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [syncTips(), vocs(), react(), tempoNode()],
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  for (const key of Object.keys(env)) {
+    if (!(key in process.env)) process.env[key] = env[key]
+  }
+  return {
+    plugins: [syncTips(), vocs(), react(), tempoNode()],
+  }
 })
 
 function tempoNode(): Plugin {
@@ -24,6 +30,40 @@ function tempoNode(): Plugin {
       console.log('√ tempo node started on port 8545')
     },
   }
+}
+
+/**
+ * Escape angle brackets in prose so MDX does not interpret them as JSX.
+ * Preserves content inside fenced code blocks and inline code spans.
+ */
+function escapeAngleBrackets(source: string): string {
+  const lines = source.split('\n')
+  const result: string[] = []
+  let inCodeBlock = false
+
+  for (const line of lines) {
+    if (/^```/.test(line)) {
+      inCodeBlock = !inCodeBlock
+      result.push(line)
+      continue
+    }
+    if (inCodeBlock) {
+      result.push(line)
+      continue
+    }
+    // Split by inline code spans to avoid escaping inside them
+    const parts = line.split(/(`[^`]*`)/)
+    for (let i = 0; i < parts.length; i++) {
+      if (i % 2 === 0) {
+        // Escape < > that would be misread as JSX. Use backslash escapes
+        // which MDX/micromark supports.
+        parts[i] = parts[i].replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      }
+    }
+    result.push(parts.join(''))
+  }
+
+  return result.join('\n')
 }
 
 function syncTips(): Plugin {
@@ -57,6 +97,9 @@ function syncTips(): Plugin {
           /\(tips\/ref-impls\/src\/interfaces\/(\w+\.sol)\)/g,
           '(https://github.com/tempoxyz/tempo-std/blob/master/src/interfaces/$1)',
         )
+        // Escape angle brackets outside of code blocks/inline code so MDX doesn't
+        // treat them as JSX (e.g. `Mapping<B256, bool>` in prose).
+        content = escapeAngleBrackets(content)
         const outputPath = path.join(outputDir, file.name.replace('.md', '.mdx'))
         await fs.writeFile(outputPath, content)
       }),

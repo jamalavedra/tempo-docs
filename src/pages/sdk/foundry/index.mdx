@@ -12,13 +12,13 @@ For general information about Foundry, see the [Foundry documentation](https://g
 
 ## Get started with Foundry
 
-### Install using `foundryup`
-
 Tempo's Foundry fork is installed through the standard upstream `foundryup` using the `-n tempo` flag, no separate installer is required.
 
-Getting started is very easy:
+::::steps
 
-Install regular `foundryup`:
+## Install `foundryup`
+
+If you don't have `foundryup` installed yet:
 
 ```bash
 curl -L https://foundry.paradigm.xyz | bash
@@ -30,21 +30,22 @@ Or if you already have `foundryup` installed:
 foundryup --update
 ```
 
-Next, run:
+## Install Tempo's Foundry fork
 
 ```bash
 foundryup -n tempo
 ```
 
-It will automatically install the latest `nightly` release of all precompiled binaries: [`forge`](https://getfoundry.sh/forge/overview#forge), [`cast`](https://getfoundry.sh/cast/overview#cast), [`anvil`](https://getfoundry.sh/anvil/overview#anvil), and [`chisel`](https://getfoundry.sh/chisel/overview#chisel).
+This will automatically install the latest `nightly` release of all precompiled binaries: [`forge`](https://getfoundry.sh/forge/overview#forge), [`cast`](https://getfoundry.sh/cast/overview#cast), [`anvil`](https://getfoundry.sh/anvil/overview#anvil), and [`chisel`](https://getfoundry.sh/chisel/overview#chisel).
 
+:::tip
 To install a specific version, replace `<TAG_NAME>` with the desired release tag:
-
 ```bash
 foundryup -n tempo -i <TAG_NAME>
 ```
+:::
 
-### Verify Installation
+## Verify Installation
 
 ```bash
 forge -V
@@ -56,7 +57,7 @@ You should see version information include `-tempo`, indicating you are using th
 # forge <version>-tempo (<commit> <timestamp>)
 ```
 
-### Create a new Foundry project
+## Create a new Foundry project
 
 Initialize a new project with Tempo support:
 
@@ -65,6 +66,8 @@ forge init -n tempo my-project && cd my-project
 ```
 
 Each new project is configured for Tempo out of the box, with [`tempo-std`](https://github.com/tempoxyz/tempo-std), the Tempo standard library installed, containing helpers for Tempo's protocol-level features.
+
+::::
 
 ## Use Foundry for your workflows
 
@@ -87,12 +90,12 @@ forge script script/Mail.s.sol
 
 ```bash
 # Set environment variables
-export TEMPO_RPC_URL=https://rpc.moderato.tempo.xyz
+export TEMPO_RPC_URL=https://rpc.tempo.xyz
 export VERIFIER_URL=https://contracts.tempo.xyz
 
 # Optional: create a new keypair and request some testnet tokens from the faucet.
 cast wallet new
-cast rpc tempo_fundAddress <YOUR_WALLET_ADDRESS> --rpc-url $TEMPO_RPC_URL
+cast rpc tempo_fundAddress <YOUR_WALLET_ADDRESS> --rpc-url https://rpc.moderato.tempo.xyz
 
 # Run all tests on Tempo's testnet
 forge test
@@ -110,6 +113,15 @@ forge create src/Mail.sol:Mail \
   --tempo.fee-token <FEE_TOKEN_ADDRESS> \
   --rpc-url $TEMPO_RPC_URL \
   --interactive \
+  --broadcast \
+  --verify \
+  --constructor-args 0x20c0000000000000000000000000000000000001
+
+# Deploy using an access key (delegated signing)
+forge create src/Mail.sol:Mail \
+  --tempo.access-key $ACCESS_KEY_PRIVATE_KEY \
+  --tempo.root-account $ROOT_ADDRESS \
+  --rpc-url $TEMPO_RPC_URL \
   --broadcast \
   --verify \
   --constructor-args 0x20c0000000000000000000000000000000000001
@@ -241,8 +253,8 @@ cast send 0xAAAAAAAA00000000000000000000000000000000 \
 # Then send using the access key
 cast send <CONTRACT_ADDRESS> 'increment()' \
   --rpc-url $TEMPO_RPC_URL \
-  --access-key $ACCESS_KEY_PRIVATE_KEY \
-  --root-account $ROOT_ADDRESS
+  --tempo.access-key $ACCESS_KEY_PRIVATE_KEY \
+  --tempo.root-account $ROOT_ADDRESS
 ```
 
 ### Local Development with Anvil
@@ -298,6 +310,8 @@ The following flags are available for `cast` and `forge script` for Tempo-specif
 | `--tempo.valid-after <TIMESTAMP>` | Unix timestamp after which tx can execute | `--tempo.valid-after 1704067100` |
 | `--tempo.sponsor-signature <SIG>` | Pre-signed sponsor signature for gasless transactions | `--tempo.sponsor-signature 0x...` |
 | `--tempo.print-sponsor-hash` | Print fee payer signature hash and exit (for sponsor to sign) | `--tempo.print-sponsor-hash` |
+| `--tempo.access-key <KEY>` | Private key for delegated signing via access key | `--tempo.access-key $ACCESS_KEY_PRIVATE_KEY` |
+| `--tempo.root-account <ADDRESS>` | Root account address when using an access key | `--tempo.root-account $ROOT_ADDRESS` |
 
 Ledger and Trezor wallets are not yet compatible with any `--tempo.*` option.
 

@@ -102,7 +102,7 @@ Your node is syncing historical blocks.
 
 ```bash
 # Check sync stage
-curl -s localhost:8002/metrics | grep reth_sync_checkpoint
+curl -s localhost:6060/metrics | grep reth_sync_checkpoint
 ```
 
 If `reth_sync_checkpoint` shows stages other than `Finish`, you're still syncing.
