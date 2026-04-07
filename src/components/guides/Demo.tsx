@@ -21,6 +21,8 @@ import { alphaUsd } from './tokens'
 
 export { alphaUsd, betaUsd, pathUsd, thetaUsd } from './tokens'
 
+export const TEMPO_CONNECTOR_ID = 'xyz.tempo'
+
 export const FAKE_RECIPIENT = '0xbeefcafe54750903ac1c8909323af7beb21ea2cb'
 export const FAKE_RECIPIENT_2 = '0xdeadbeef54750903ac1c8909323af7beb21ea2cb'
 
@@ -110,14 +112,14 @@ export function Container(
 
     if (source === 'webAuthn') {
       const webAuthnConnection = connections.find(
-        (c) => c.connector.id === 'webAuthn' || c.connector.id === 'xyz.tempo',
+        (c) => c.connector.id === 'webAuthn' || c.connector.id === TEMPO_CONNECTOR_ID,
       )
       return webAuthnConnection?.accounts[0]
     }
 
     if (source === 'wallet') {
       const walletConnection = connections.find(
-        (c) => c.connector.id !== 'webAuthn' && c.connector.id !== 'xyz.tempo',
+        (c) => c.connector.id !== 'webAuthn' && c.connector.id !== TEMPO_CONNECTOR_ID,
       )
       return walletConnection?.accounts[0]
     }
@@ -369,14 +371,32 @@ export function Login() {
           Check prompt
         </Button>
       ) : (
-        <Button
-          variant="accent"
-          className="font-normal text-[14px] -tracking-[2%]"
-          onClick={() => connect.connect({ connector })}
-          type="button"
-        >
-          Sign in
-        </Button>
+        <div className="flex gap-1">
+          <Button
+            variant="accent"
+            className="font-normal text-[14px] -tracking-[2%]"
+            onClick={() => connect.connect({ connector })}
+            type="button"
+          >
+            Sign in
+          </Button>
+          <Button
+            variant="default"
+            className="font-normal text-[14px] -tracking-[2%]"
+            onClick={() =>
+              connect.connect({
+                connector,
+                capabilities: {
+                  name: 'Tempo Docs',
+                  method: 'register',
+                },
+              })
+            }
+            type="button"
+          >
+            Sign up
+          </Button>
+        </div>
       )}
     </div>
   )
