@@ -9,6 +9,7 @@ import {
   type CreateConfigParameters,
   createConfig,
   createStorage,
+  fallback,
   http,
   useConnectors,
   webSocket,
@@ -77,16 +78,22 @@ export function getConfig(options: getConfig.Options = {}) {
     }),
     transports: {
       [tempoModerato.id]: withFeePayer(
-        webSocket('wss://rpc.moderato.tempo.xyz', {
-          keepAlive: { interval: 1_000 },
-        }),
+        fallback([
+          http('https://rpc.moderato.tempo.xyz'),
+          webSocket('wss://rpc.moderato.tempo.xyz', {
+            keepAlive: { interval: 1_000 },
+          }),
+        ]),
         http('https://sponsor.moderato.tempo.xyz'),
         { policy: 'sign-only' },
       ),
       [tempoDevnet.id]: withFeePayer(
-        webSocket(tempoDevnet.rpcUrls.default.webSocket[0], {
-          keepAlive: { interval: 1_000 },
-        }),
+        fallback([
+          http(tempoDevnet.rpcUrls.default.http[0]),
+          webSocket(tempoDevnet.rpcUrls.default.webSocket[0], {
+            keepAlive: { interval: 1_000 },
+          }),
+        ]),
         http('https://sponsor.devnet.tempo.xyz'),
         { policy: 'sign-only' },
       ),
