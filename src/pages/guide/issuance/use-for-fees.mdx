@@ -1,5 +1,6 @@
 ---
 description: Enable users to pay transaction fees using your stablecoin. Add fee pool liquidity and integrate with Tempo's flexible fee payment system.
+interactive: true
 ---
 
 import { Cards, Card } from 'vocs'
@@ -201,13 +202,11 @@ export function PayWithIssuedToken() {
 // @noErrors
 import { createConfig, http } from 'wagmi'
 import { tempo } from 'viem/chains'
-import { KeyManager, webAuthn } from 'wagmi/tempo'
+import { tempoWallet } from 'accounts/wagmi'
 
 export const config = createConfig({
   chains: [tempo],
-  connectors: [webAuthn({
-    keyManager: KeyManager.localStorage(),
-  })],
+  connectors: [tempoWallet()],
   transports: {
     [tempo.id]: http(),
   },

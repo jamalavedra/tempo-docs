@@ -1,8 +1,21 @@
 import { QueryClient } from '@tanstack/react-query'
+import { Expiry } from 'accounts'
+import { tempoWallet, webAuthn as webAuthnAccounts } from 'accounts/wagmi'
+import * as React from 'react'
+import { parseUnits } from 'viem'
 import { tempoDevnet, tempoLocalnet, tempoModerato } from 'viem/chains'
 import { withFeePayer } from 'viem/tempo'
-import { type CreateConfigParameters, createConfig, createStorage, http, webSocket } from 'wagmi'
+import {
+  type CreateConfigParameters,
+  createConfig,
+  createStorage,
+  fallback,
+  http,
+  useConnectors,
+  webSocket,
+} from 'wagmi'
 import { KeyManager, webAuthn } from 'wagmi/tempo'
+import { alphaUsd, betaUsd, pathUsd, thetaUsd } from './components/guides/tokens'
 
 const feeToken = '0x20c0000000000000000000000000000000000001'
 
@@ -28,11 +41,37 @@ export function getConfig(options: getConfig.Options = {}) {
     },
     chains: [chain],
     connectors: [
-      webAuthn({
-        grantAccessKey: { chainId: BigInt(chain.id) } as any,
-        keyManager: KeyManager.http('https://keys.tempo.xyz'),
-        rpId,
-      }),
+      ...(import.meta.env.VITE_E2E === 'true'
+        ? [
+            webAuthnAccounts({
+              rdns: 'webAuthn',
+            }),
+          ]
+        : [
+            tempoWallet({
+              authorizeAccessKey: () => ({
+                expiry: Expiry.days(1),
+                limits: [
+                  { token: pathUsd, limit: parseUnits('500', 6) },
+                  { token: alphaUsd, limit: parseUnits('500', 6) },
+                  { token: betaUsd, limit: parseUnits('500', 6) },
+                  { token: thetaUsd, limit: parseUnits('500', 6) },
+                ],
+              }),
+              feePayer: {
+                precedence: 'user-first',
+                url: 'https://sponsor.moderato.tempo.xyz',
+              },
+            }),
+            webAuthn({
+              grantAccessKey: {
+                // @ts-expect-error - TODO: migrate to webAuthn on Accounts SDK
+                chainId: BigInt(chain.id),
+              },
+              keyManager: KeyManager.http('https://keys.tempo.xyz'),
+              rpId,
+            }),
+          ]),
     ],
     multiInjectedProviderDiscovery,
     storage: createStorage({
@@ -41,16 +80,22 @@ export function getConfig(options: getConfig.Options = {}) {
     }),
     transports: {
       [tempoModerato.id]: withFeePayer(
-        webSocket('wss://rpc.moderato.tempo.xyz', {
-          keepAlive: { interval: 1_000 },
-        }),
+        fallback([
+          http('https://rpc.moderato.tempo.xyz'),
+          webSocket('wss://rpc.moderato.tempo.xyz', {
+            keepAlive: { interval: 1_000 },
+          }),
+        ]),
         http('https://sponsor.moderato.tempo.xyz'),
         { policy: 'sign-only' },
       ),
       [tempoDevnet.id]: withFeePayer(
-        webSocket(tempoDevnet.rpcUrls.default.webSocket[0], {
-          keepAlive: { interval: 1_000 },
-        }),
+        fallback([
+          http(tempoDevnet.rpcUrls.default.http[0]),
+          webSocket(tempoDevnet.rpcUrls.default.webSocket[0], {
+            keepAlive: { interval: 1_000 },
+          }),
+        ]),
         http('https://sponsor.devnet.tempo.xyz'),
         { policy: 'sign-only' },
       ),
@@ -63,12 +108,30 @@ export namespace getConfig {
   export type Options = Partial<Pick<CreateConfigParameters, 'multiInjectedProviderDiscovery'>>
 }
 
-export const config = getConfig()
+export type Config = ReturnType<typeof getConfig>
 
 export const queryClient = new QueryClient()
 
+export function useTempoWalletConnector() {
+  const connectors = useConnectors()
+  return React.useMemo(
+    // biome-ignore lint/style/noNonNullAssertion: _
+    () => connectors.find((connector) => connector.id === 'xyz.tempo')!,
+    [connectors],
+  )
+}
+
+export function useWebAuthnConnector() {
+  const connectors = useConnectors()
+  return React.useMemo(
+    // biome-ignore lint/style/noNonNullAssertion: _
+    () => connectors.find((connector) => connector.id === 'webAuthn')!,
+    [connectors],
+  )
+}
+
 declare module 'wagmi' {
   interface Register {
-    config: typeof config
+    config: Config
   }
 }

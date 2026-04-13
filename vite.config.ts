@@ -3,6 +3,7 @@ import * as path from 'node:path'
 import react from '@vitejs/plugin-react'
 import { Instance } from 'prool'
 import { defineConfig, loadEnv, type Plugin } from 'vite'
+import mkcert from 'vite-plugin-mkcert'
 import { vocs } from 'vocs/vite'
 
 // https://vite.dev/config/
@@ -11,8 +12,16 @@ export default defineConfig(({ mode }) => {
   for (const key of Object.keys(env)) {
     if (!(key in process.env)) process.env[key] = env[key]
   }
+
+  const useHttp = process.env.CI === 'true' || process.env.VITE_USE_HTTP === 'true'
+
   return {
-    plugins: [syncTips(), vocs(), react(), tempoNode()],
+    plugins: [syncTips(), vocs(), react(), ...(useHttp ? [] : [mkcert()]), tempoNode()],
+    server: useHttp
+      ? {
+          host: 'localhost',
+        }
+      : undefined,
   }
 })
 
