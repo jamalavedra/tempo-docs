@@ -1,9 +1,19 @@
+strictDepBuilds: true
+blockExoticSubdeps: false
+trustPolicy: no-downgrade
 minimumReleaseAge: 1440
+
+onlyBuiltDependencies:
+  - core-js
+  - es5-ext
+  - esbuild
+  - protobufjs
 
 minimumReleaseAgeExclude:
   - accounts
   - mppx
   - incur
+  - ox
   - viem
 
 patchedDependencies:
