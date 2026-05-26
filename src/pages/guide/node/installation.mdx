@@ -44,9 +44,43 @@ docker run -d --name tempo ghcr.io/tempoxyz/tempo:<version> --version
 docker logs tempo
 ```
 
+## Snapshots
+
+Downloading a snapshot lets your node skip syncing from genesis and start participating much faster. Choose the snapshot profile based on what the node does:
+
+- Validators should use `--minimal`.
+- RPC providers, indexers, and other workloads that need complete historical data should use `--archive`.
+
+### What is Minimal Mode?
+
+Minimal Mode is a Reth storage profile for nodes that need to follow the chain and serve recent state, such as validators. It keeps disk usage low by pruning older historical data. If the node serves historical RPC, indexing, archive, or tracing workloads, use `--archive` instead.
+
+See Reth's [Minimal Storage Mode](https://reth.rs/run/storage/minimal/) docs for the storage trade-offs.
+
+::::code-group
+```bash [Validator mainnet]
+tempo download --chain mainnet --minimal
+```
+```bash [Validator testnet]
+tempo download --chain moderato --minimal
+```
+```bash [Archive mainnet]
+tempo download --chain mainnet --archive
+```
+```bash [Archive testnet]
+tempo download --chain moderato --archive
+```
+::::
+
+Use [snapshots.tempo.xyz](https://snapshots.tempo.xyz/) to compare snapshot profiles or copy generated `tempo download` commands.
+
+:::note[Replacing existing snapshot data]
+When replacing snapshot data in an existing data directory, add `--force` after selecting the right profile. `--force` overwrites snapshot data but preserves `discovery-secret` and `known-peers.json`.
+:::
+
 ## Verifying Releases
 
-All release artifacts are cryptographically signed starting after **v1.1.1**. We recommend verifying signatures before running any binary.
+All release artifacts are cryptographically signed. We recommend verifying signatures before running any binary.
 
 ### Binary Signatures (GPG)
 

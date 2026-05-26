@@ -1,0 +1,119 @@
+---
+title: T5 Network Upgrade
+description: Details and timeline for the T5 network upgrade, including the enshrined TIP-20 reserve channel precompile, DEX improvements, multihop FeeAMM routing, and more.
+---
+
+# T5 Network Upgrade
+
+T5 is Tempo's next network upgrade. It introduces an enshrined TIP-20 reserve channel precompile for MPP and similar session-based payment flows, payment lane classification in consensus, DEX improvements (same-tick flip orders and persistent order IDs across flips), multihop FeeAMM routing, an on-chain `logoURI` field for TIP-20 tokens, an Implicit Approvals List for gas-efficient internal transfers, and a witness digest binding for one-signature key authorization flows.
+
+:::info[T5 status]
+T5 is not yet active on testnet or mainnet. The features described on this page become live at the activation timestamps below.
+:::
+
+## Timeline
+
+| Network | Date | Timestamp |
+|---------|------|-----------|
+| Testnet | June 3, 2026 | TBD |
+| Mainnet | June 9, 2026 | TBD |
+
+Node operators must upgrade to the T5-compatible release (v1.8.0, targeted for May 27, 2026) before the testnet activation timestamp.
+
+## Overview
+
+T5 introduces the following changes:
+- An enshrined TIP-20 reserve channel precompile for MPP and other session-based payment flows ([TIP-1034](https://tips.sh/1034))
+- Consensus-level classification of payment-lane-eligible transactions ([TIP-1045](https://tips.sh/1045))
+- Same-tick flip orders on the DEX ([TIP-1030](https://tips.sh/1030))
+- Persistent order IDs across flips ([TIP-1056](https://tips.sh/1056))
+- Multihop FeeAMM routing for validator payout tokens ([TIP-1033](https://tips.sh/1033))
+- An optional on-chain `logoURI` field for TIP-20 tokens ([TIP-1026](https://tips.sh/1026))
+- An Implicit Approvals List enabling listed precompiles to pull TIP-20 tokens without a prior approval ([TIP-1035](https://tips.sh/1035))
+- A witness digest field in key authorizations to bind one signature to an application challenge ([TIP-1053](https://tips.sh/1053))
+
+**Action required for node operators:** Upgrade to v1.8.0 before the testnet activation timestamp. Non-upgraded nodes will fall out of consensus.
+
+## Integration changes
+
+Most of T5 is additive. The notes below cover behaviors that integrators, indexers, and tooling should pick up before activation.
+
+### Enshrined TIP-20 reserve channel (TIP-1034)
+
+Not a breaking change at the contract level — the existing application-level MPP reserve contract continues to work after T5. The new precompile lives at [`0x4D50500000000000000000000000000000000000`](https://explore.tempo.xyz/address/0x4D50500000000000000000000000000000000000) (ASCII `MPP`). To migrate to the precompile path, MPP libraries need to be upgraded to versions that target it; new releases will be linked under [Compatible SDK releases](#compatible-sdk-releases) once published. Tooling that monitors or interacts with MPP reserve should be aware of both surfaces during the transition.
+
+### Payment lane selector allow-list (TIP-1045)
+
+Anything that classifies transactions as "payments" (indexers, explorers, payment processors) should pick up the new selector allow-list. The list covers TIP-20 calls and the new `TIP20ChannelReserve` precompile (TIP-1034).
+
+### Same-tick flip orders (TIP-1030)
+
+`placeFlip` now allows `flipTick == tick`. There is no breaking change, but downstream code that assumes `flipTick` is strictly on the opposite side of `tick` will stop holding.
+
+### Persistent order IDs across flips (TIP-1056)
+
+Flipped orders keep the same `orderId` and emit a new `OrderFlipped` event instead of `OrderPlaced`. Indexers should handle `OrderFlipped` and stop expecting a new `orderId` per flip. Frontends and SDKs surfacing order status should display the persistent ID. See the [T4 → T5 migration appendix on the Providing Liquidity page](/protocol/exchange/providing-liquidity#t4--t5-migration) and the [compatibility section of TIP-1056](https://tips.sh/1056#compatibility).
+
+### Optional `logoURI` in TIP-20 (TIP-1026)
+
+Tokens without `logoURI` continue to work. New surface area:
+
+- A `logoURI()` view on every TIP-20 — wallets and explorers can read it directly instead of going through `tokenlist.tempo.xyz`.
+- A new `LogoURIUpdated(address indexed updater, string newLogoURI)` event. When the new `createToken` overload is called with a non-empty `logoURI`, this event is emitted from the new token's address (not the factory) with `updater = msg.sender`.
+- A new 7-arg `createToken` overload on the factory that accepts a `logoURI`. The previous overload is unchanged.
+- `setLogoURI(string)` for admin-only updates (requires `DEFAULT_ADMIN_ROLE`).
+
+`logoURI` is validated on-chain: max 256 bytes (reverts `LogoURITooLong`), and if non-empty must be a syntactically valid URI with a scheme in the allowlist `https`, `http`, `ipfs`, `data` (case-insensitive). Otherwise reverts `InvalidLogoURI`. Empty string is valid and clears the field.
+
+Use an SVG for `logoURI` so it renders crisply at any resolution across wallets and explorers (see [tokenlist Icon Requirements](/quickstart/tokenlist#icon-requirements)).
+
+### Witness digest in key authorizations (TIP-1053)
+
+`key_authorization` gains an optional `witness: bytes32` field. The protocol includes the witness in the signing hash and emits it when the key authorization is registered, but otherwise treats it as opaque and application-defined. No breaking change; tooling should start populating and reading the new field.
+
+## Compatible SDK releases
+
+T5-compatible SDK releases will be listed here as they ship.
+
+## Feature TIPs
+
+### TIP-1034: Enshrined TIP-20 Reserve Channel
+
+[TIP-1034](https://tips.sh/1034) moves TIP-20 payment-channel reserve from an application-level Solidity contract into the protocol as a precompile, giving Tempo a native, canonical payment-channel primitive for MPP and other high-frequency payment apps.
+
+As a precompile, reserve uses protocol-native capabilities directly:
+
+- **Simpler open/top-up flow:** channels can be opened or topped up in one transaction.
+- **Cleaner channel identity:** channel IDs are derived from the transaction's replay-protected context hash, instead of requiring transaction-context access to be exposed to Solidity.
+- **Reduced storage and lower cost:** immutable channel details live in calldata and `ChannelOpened` logs; the precompile stores only mutable channel state on-chain.
+- **Stable integration surface:** one canonical protocol-level reserve interface, while internals can improve in future upgrades without changing the public API.
+
+### TIP-1045: Payment Lane Classification
+
+[TIP-1045](https://tips.sh/1045) adds consensus rules that classify which transactions are eligible for the payment lane via a calldata selector allow-list enforced at the T5 hardfork. The allow-list covers TIP-20 calls and the new `TIP20ChannelReserve` precompile (TIP-1034), so reserve-channel transactions are first-class payment-lane traffic. This was previously a builder-level, locally-subjective policy; T5 enshrines it in consensus.
+
+### TIP-1030: Allow Same-Tick Flip Orders
+
+[TIP-1030](https://tips.sh/1030) relaxes `placeFlip` so `flipTick == tick` is allowed, enabling a filled order to re-list on the opposite side at the exact same tick. Before T5, a bid flip order had to flip to a higher tick and an ask flip order had to flip to a lower tick — too restrictive for pegged or near-1:1 assets where a market maker may want to buy and sell at the same tick to support instant convertibility between tokens or wrappers.
+
+### TIP-1056: Keep Order IDs Across Flips
+
+[TIP-1056](https://tips.sh/1056) keeps the same `orderId` across flips, rewrites the order in place, and emits a new `OrderFlipped` event instead of `OrderPlaced`. Before T5, the DEX treated the flipped side as a new order — emitting `OrderFilled`, allocating a new `orderId`, emitting `OrderPlaced`, and advancing `nextOrderId` — which made one logical flip strategy look like a chain of unrelated orders. After T5, market makers and order-tracking UIs can follow a single flip order across its full lifecycle without stitching IDs together.
+
+### TIP-1033: Multihop FeeAMM Routing
+
+[TIP-1033](https://tips.sh/1033) lets validators support more payout tokens without requiring direct liquidity for every fee-token / payout-token pair. Before T5, validator onboarding had a direct-liquidity requirement for every supported token; as more stablecoins and TIP-20s come to Tempo, we want users to pay fees in many tokens while validators choose the token they receive. FeeAMM LPs and rebalancers should be aware that one fee conversion can now reserve and consume liquidity from two pools instead of one.
+
+For new token issuers this means fee-pool liquidity setup is simpler: instead of provisioning a pool against every validator payout token, an issuer can pair their token against a single liquid quote (e.g., `pathUSD`) and let multihop routing connect it to any validator payout token that has its own pathUSD pool. Pool reserves and route availability are visible in the [FeeAMM explorer view](https://explore.tempo.xyz/fee-amm).
+
+### TIP-1035: Implicit Approvals List
+
+[TIP-1035](https://tips.sh/1035) defines a hardfork-gated Implicit Approval List of precompiles that may pull TIP-20 tokens without a prior approval, removing the extra wallet prompt and allowance write that native flows like StablecoinDEX order placement, DEX swaps, and FeeAMM fee collection used to require. Listed precompiles may call the internal `system_transfer_from(from, to, amount)` function. This function is not part of the public TIP-20 ABI and cannot be called by external contracts. It skips allowance checks and updates, but still enforces balance checks, TIP-403 transfer policies, AccountKeychain spending limits, and emits the standard TIP-20 `Transfer` event. Normal TIP-20 `approve`, `permit`, `allowance`, and `transferFrom` behavior is unchanged.
+
+### TIP-1026: Optional logoURI Field in TIP-20
+
+[TIP-1026](https://tips.sh/1026) adds an optional `logoURI` string field (256-byte cap) to TIP-20 tokens, admin-mutable via `setLogoURI`. Wallets and explorers can read token icons on-chain instead of relying on an off-chain token list. Token issuers can publish their official logo with the token, and any wallet or explorer can render it without a centralized list registration.
+
+### TIP-1053: Witness Digest in Key Authorizations
+
+[TIP-1053](https://tips.sh/1053) adds an optional `witness: bytes32` field to `key_authorization` so one signature can both authorize an access key and bind to an application challenge. The protocol includes the witness in the signing hash and emits it when the key authorization is registered, but otherwise treats it as opaque and application-defined. In login or delegated-access flows, an app server can derive a 32-byte witness from its challenge, include it in the key authorization, and verify off-chain that the signed authorization is bound to that challenge — collapsing the previous two-prompt flow (one challenge signature, one key-authorization signature) into a single signature without weakening key-authorization semantics.

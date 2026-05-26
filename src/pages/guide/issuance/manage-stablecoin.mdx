@@ -21,6 +21,10 @@ import { Cards, Card } from 'vocs'
 
 Configure your stablecoin's permissions, supply limits, and compliance policies after deployment. This guide covers granting roles to manage token operations, setting supply caps, configuring transfer policies, and controlling token transfers through pause/unpause functionality.
 
+:::info[Coming with T5]
+After the [T5 network upgrade](/protocol/upgrades/t5), an admin holding `DEFAULT_ADMIN_ROLE` can update the on-chain `logoURI` field on any TIP-20 via `setLogoURI(string newLogoURI)` ([TIP-1026](https://tips.sh/1026)). Wallets and explorers can read the icon directly from the token contract via `logoURI()`. Use an SVG for `logoURI` so it renders crisply at any resolution across wallets and explorers (see [tokenlist Icon Requirements](/quickstart/tokenlist#icon-requirements)). See the [Optional logoURI in TIP-20 section of the T5 page](/protocol/upgrades/t5#optional-logouri-in-tip-20-tip-1026) for the full surface area.
+:::
+
 TIP-20 tokens use a role-based access control system that allows you to delegate different administrative functions to different addresses. For detailed information about the role system, see the [TIP-20 specification](/protocol/tip20/spec#role-based-access-control).
 
 ## Steps
@@ -85,7 +89,7 @@ export function GrantRoles() {
 // @noErrors
 import { createConfig, http } from 'wagmi'
 import { tempo } from 'viem/chains'
-import { tempoWallet } from 'accounts/wagmi'
+import { tempoWallet } from 'wagmi/connectors'
 
 export const config = createConfig({
   chains: [tempo],
@@ -162,7 +166,7 @@ export function GrantRoles() {
 // @noErrors
 import { createConfig, http } from 'wagmi'
 import { tempo } from 'viem/chains'
-import { tempoWallet } from 'accounts/wagmi'
+import { tempoWallet } from 'wagmi/connectors'
 
 export const config = createConfig({
   chains: [tempo],
@@ -273,7 +277,7 @@ export function RevokeRoles() {
 // @noErrors
 import { createConfig, http } from 'wagmi'
 import { tempo } from 'viem/chains'
-import { tempoWallet } from 'accounts/wagmi'
+import { tempoWallet } from 'wagmi/connectors'
 
 export const config = createConfig({
   chains: [tempo],
@@ -342,7 +346,7 @@ export function SetSupplyCap() {
 // @noErrors
 import { createConfig, http } from 'wagmi'
 import { tempo } from 'viem/chains'
-import { tempoWallet } from 'accounts/wagmi'
+import { tempoWallet } from 'wagmi/connectors'
 
 export const config = createConfig({
   chains: [tempo],
@@ -449,7 +453,7 @@ export function LinkTokenPolicy() {
 // @noErrors
 import { createConfig, http } from 'wagmi'
 import { tempo } from 'viem/chains'
-import { tempoWallet } from 'accounts/wagmi'
+import { tempoWallet } from 'wagmi/connectors'
 
 export const config = createConfig({
   chains: [tempo],
@@ -527,7 +531,7 @@ export function PauseUnpauseTransfers() {
 // @noErrors
 import { createConfig, http } from 'wagmi'
 import { tempo } from 'viem/chains'
-import { tempoWallet } from 'accounts/wagmi'
+import { tempoWallet } from 'wagmi/connectors'
 
 export const config = createConfig({
   chains: [tempo],
@@ -599,7 +603,7 @@ export function BurnBlocked() {
 // @noErrors
 import { createConfig, http } from 'wagmi'
 import { tempo } from 'viem/chains'
-import { tempoWallet } from 'accounts/wagmi'
+import { tempoWallet } from 'wagmi/connectors'
 
 export const config = createConfig({
   chains: [tempo],

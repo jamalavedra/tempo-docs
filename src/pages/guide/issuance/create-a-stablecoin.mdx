@@ -15,6 +15,10 @@ Create your own stablecoin on Tempo using the [TIP-20 token standard](/protocol/
 TIP-20 tokens are designed specifically for payments with built-in compliance features, role-based permissions, 
 and integration with Tempo's payment infrastructure.
 
+:::info[Coming with T5]
+After the [T5 network upgrade](/protocol/upgrades/t5), the TIP-20 factory exposes a new 7-arg `createToken` overload that accepts an on-chain `logoURI` at creation ([TIP-1026](https://tips.sh/1026)). Wallets and explorers can read the icon directly from the token contract via `logoURI()`, without going through the [tokenlist registry](/quickstart/tokenlist). The previous `createToken` overload is unchanged. Use an SVG for `logoURI` so it renders crisply at any resolution across wallets and explorers (see [tokenlist Icon Requirements](/quickstart/tokenlist#icon-requirements)). See the [Optional logoURI in TIP-20 section of the T5 page](/protocol/upgrades/t5#optional-logouri-in-tip-20-tip-1026) for the full surface area.
+:::
+
 ## Demo
 
 By the end of this guide, you will be able to create a stablecoin on Tempo.
@@ -72,7 +76,7 @@ export function AddFunds() {
 // @noErrors
 import { createConfig, http } from 'wagmi'
 import { tempo } from 'viem/chains'
-import { tempoWallet } from 'accounts/wagmi'
+import { tempoWallet } from 'wagmi/connectors'
 
 export const config = createConfig({
   chains: [tempo],
@@ -131,7 +135,7 @@ export function CreateStablecoin() {
 // @noErrors
 import { createConfig, http } from 'wagmi'
 import { tempo } from 'viem/chains'
-import { tempoWallet } from 'accounts/wagmi'
+import { tempoWallet } from 'wagmi/connectors'
 
 export const config = createConfig({
   chains: [tempo],
@@ -151,7 +155,7 @@ Now that we have some input fields, we need to add some logic to handle the subm
 After this step, your users will be able to create a stablecoin by clicking the "Create" button!
 
 :::warning
-We **strongly** recommend that for stablecoins, the `currency` field be set to the [ISO 4217](https://www.iso.org/iso-4217-currency-codes.html) three-letter code for the underlying fiat currency (e.g., `"USD"`, `"EUR"`, `"GBP"`) — **not** the token symbol. This value is **immutable** after token creation and affects fee payment eligibility, DEX routing, and quote token pairing. **Only `USD` stablecoins can be used to pay transaction fees on Tempo** — if your stablecoin is USD-denominated, the currency must be set to `"USD"` to be eligible for fee payment.
+The `currency` field is **immutable** after token creation and affects fee payment eligibility, DEX routing, and quote token pairing. See [Currency Declaration](/protocol/tip20/overview#currency-declaration) for guidelines on choosing the right value. **Only `USD` stablecoins can be used to pay transaction fees on Tempo.**
 :::
 
 <Demo.Container name="Create Form">
@@ -197,7 +201,7 @@ export function CreateStablecoin() {
 // @noErrors
 import { createConfig, http } from 'wagmi'
 import { tempo } from 'viem/chains'
-import { tempoWallet } from 'accounts/wagmi'
+import { tempoWallet } from 'wagmi/connectors'
 
 export const config = createConfig({
   chains: [tempo],
@@ -263,7 +267,7 @@ export function CreateStablecoin() {
 // @noErrors
 import { createConfig, http } from 'wagmi'
 import { tempo } from 'viem/chains'
-import { tempoWallet } from 'accounts/wagmi'
+import { tempoWallet } from 'wagmi/connectors'
 
 export const config = createConfig({
   chains: [tempo],

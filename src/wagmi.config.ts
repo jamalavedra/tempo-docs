@@ -1,9 +1,8 @@
 import { QueryClient } from '@tanstack/react-query'
 import { Expiry } from 'accounts'
-import { tempoWallet, webAuthn as webAuthnAccounts } from 'accounts/wagmi'
 import * as React from 'react'
 import { parseUnits } from 'viem'
-import { tempoDevnet, tempoLocalnet, tempoModerato } from 'viem/chains'
+import { tempo, tempoDevnet, tempoLocalnet, tempoModerato } from 'viem/chains'
 import { withRelay } from 'viem/tempo'
 import {
   type CreateConfigParameters,
@@ -14,9 +13,10 @@ import {
   useConnectors,
   webSocket,
 } from 'wagmi'
-import { KeyManager, webAuthn } from 'wagmi/tempo'
+import { tempoWallet, webAuthn } from 'wagmi/tempo'
 import { alphaUsd, betaUsd, pathUsd, thetaUsd } from './components/guides/tokens'
 import { feeToken, moderatoZones } from './lib/private-zones.ts'
+import * as WebAuthnCeremony from './lib/webAuthnCeremony.ts'
 
 const chain =
   import.meta.env.VITE_TEMPO_ENV === 'localnet'
@@ -48,14 +48,10 @@ export function getConfig(options: getConfig.Options = {}) {
     batch: {
       multicall: false,
     },
-    chains: [chain],
+    chains: [chain, tempo],
     connectors: [
       ...(import.meta.env.VITE_E2E === 'true'
-        ? [
-            webAuthnAccounts({
-              rdns: 'webAuthn',
-            }),
-          ]
+        ? [webAuthn()]
         : [
             tempoWallet({
               authorizeAccessKey: () => ({
@@ -72,11 +68,7 @@ export function getConfig(options: getConfig.Options = {}) {
                 url: 'https://sponsor.moderato.tempo.xyz',
               },
             }),
-            webAuthn({
-              grantAccessKey: true,
-              keyManager: KeyManager.http('https://keys.tempo.xyz'),
-              rpId,
-            }),
+            webAuthn({ ceremony: WebAuthnCeremony.keys() }),
           ]),
     ],
     multiInjectedProviderDiscovery,
@@ -105,6 +97,7 @@ export function getConfig(options: getConfig.Options = {}) {
         http('https://sponsor.devnet.tempo.xyz'),
         { policy: 'sign-only' },
       ),
+      [tempo.id]: http(tempo.rpcUrls.default.http[0]),
       [tempoLocalnet.id]: http(undefined, { batch: true }),
     },
   })
@@ -116,15 +109,13 @@ export namespace getConfig {
 
 export type Config = ReturnType<typeof getConfig>
 
-export const config = getConfig()
-
 export const queryClient = new QueryClient()
 
 export function useTempoWalletConnector() {
   const connectors = useConnectors()
   return React.useMemo(
     // biome-ignore lint/style/noNonNullAssertion: _
-    () => connectors.find((connector) => connector.id === 'xyz.tempo')!,
+    () => connectors.find((c: { id: string }) => c.id === 'xyz.tempo')!,
     [connectors],
   )
 }
@@ -133,7 +124,7 @@ export function useWebAuthnConnector() {
   const connectors = useConnectors()
   return React.useMemo(
     // biome-ignore lint/style/noNonNullAssertion: _
-    () => connectors.find((connector) => connector.id === 'webAuthn')!,
+    () => connectors.find((c: { id: string }) => c.id === 'webAuthn')!,
     [connectors],
   )
 }

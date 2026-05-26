@@ -20,8 +20,7 @@ export default defineConfig({
   //   textColor: 'white',
   // },
   changelog: Changelog.github({ prereleases: true, repo: 'tempoxyz/tempo' }),
-  // TODO: Set back to true once tempoxyz/tempo#tip-1011 dead link is fixed
-  checkDeadlinks: 'warn',
+  checkDeadlinks: true,
   editLink: {
     link: 'https://github.com/tempoxyz/docs/edit/main/src/pages/:path',
     text: 'Suggest changes to this page',
@@ -29,6 +28,7 @@ export default defineConfig({
   title: 'Tempo',
   titleTemplate: '%s ⋅ Tempo',
   description: 'Documentation for the Tempo network and protocol specifications',
+  renderStrategy: 'partial-static',
   feedback: createFeedbackAdapter(),
   mcp: {
     enabled: true,
@@ -42,10 +42,74 @@ export default defineConfig({
     ],
   },
   baseUrl: baseUrl || undefined,
-  ogImageUrl: (path, { baseUrl } = { baseUrl: '' }) =>
-    path === '/'
-      ? `${baseUrl}/og-docs.png`
-      : `${baseUrl}/api/og?title=%title&description=%description`,
+  ogImageUrl: (path, { baseUrl } = { baseUrl: '' }) => {
+    const landingPaths = ['/', '/learn', '/changelog']
+    if (landingPaths.includes(path)) return `${baseUrl}/og-docs.png`
+
+    const sectionMap: Record<string, string> = {
+      quickstart: 'INTEGRATE',
+      guide: 'BUILD',
+      protocol: 'PROTOCOL',
+      sdk: 'SDKs',
+      cli: 'CLI',
+      ecosystem: 'ECOSYSTEM',
+      learn: 'LEARN',
+      wallet: 'WALLET',
+      accounts: 'ACCOUNTS',
+    }
+
+    const subsectionMap: Record<string, string> = {
+      'use-accounts': 'ACCOUNTS',
+      payments: 'PAYMENTS',
+      issuance: 'ISSUANCE',
+      'stablecoin-dex': 'EXCHANGE',
+      'machine-payments': 'MACHINE PAY',
+      'tempo-transaction': 'TRANSACTIONS',
+      tip20: 'TIP-20',
+      'tip20-rewards': 'REWARDS',
+      tip403: 'TIP-403',
+      fees: 'FEES',
+      transactions: 'TRANSACTIONS',
+      blockspace: 'BLOCKSPACE',
+      exchange: 'DEX',
+      tips: 'TIPS',
+      node: 'NODE',
+      typescript: 'TYPESCRIPT',
+      go: 'GO',
+      foundry: 'FOUNDRY',
+      python: 'PYTHON',
+      rust: 'RUST',
+      stablecoins: 'STABLECOINS',
+      'use-cases': 'USE CASES',
+      tempo: 'TEMPO',
+      zones: 'ZONES',
+      'private-zones': 'PRIVATE ZONES',
+      upgrades: 'UPGRADES',
+      api: 'API',
+      guides: 'GUIDES',
+      rpc: 'RPC',
+      server: 'SERVER',
+      wagmi: 'WAGMI',
+    }
+
+    const segments = path.split('/').filter(Boolean)
+    const firstSeg = segments[0] || ''
+    const secondSeg = segments[1] || ''
+    const section = sectionMap[firstSeg] || firstSeg.toUpperCase().replace(/-/g, ' ')
+    const subsection =
+      segments.length >= 3 && subsectionMap[secondSeg]
+        ? subsectionMap[secondSeg]
+        : segments.length >= 3
+          ? secondSeg.toUpperCase().replace(/-/g, ' ')
+          : ''
+
+    const extra = new URLSearchParams({
+      section,
+      ...(subsection ? { subsection } : {}),
+    }).toString()
+
+    return `${baseUrl}/api/og?title=%title&description=%description&${extra}`
+  },
   // TODO: Change back to file paths (`/lockup-light.svg`, `/lockup-dark.svg`) once password protection is removed
   logoUrl: {
     light:
@@ -101,6 +165,10 @@ export default defineConfig({
                 link: '/guide/use-accounts/embed-passkeys',
               },
               {
+                text: 'Authorize access keys',
+                link: '/guide/use-accounts/authorize-access-keys',
+              },
+              {
                 text: 'Connect to other wallets',
                 link: '/guide/use-accounts/connect-to-wallets',
               },
@@ -131,6 +199,10 @@ export default defineConfig({
                 link: '/guide/payments/transfer-memos',
               },
               {
+                text: 'Use virtual addresses',
+                link: '/guide/payments/virtual-addresses',
+              },
+              {
                 text: 'Pay fees in any stablecoin',
                 link: '/guide/payments/pay-fees-in-any-stablecoin',
               },
@@ -155,7 +227,7 @@ export default defineConfig({
             ],
           },
           {
-            text: 'Connect to Zones',
+            text: 'Private Transactions',
             collapsed: true,
             items: [
               {
@@ -455,8 +527,8 @@ export default defineConfig({
                 link: '/protocol/tip20/spec',
               },
               {
-                text: 'Reference Implementation',
-                link: 'https://github.com/tempoxyz/tempo/blob/main/tips/ref-impls/src/TIP20.sol',
+                text: 'Virtual addresses',
+                link: '/protocol/tip20/virtual-addresses',
               },
               {
                 text: 'Rust Implementation',
@@ -491,10 +563,6 @@ export default defineConfig({
                 link: '/protocol/tip403/spec',
               },
               {
-                text: 'Reference Implementation',
-                link: 'https://github.com/tempoxyz/tempo/blob/main/tips/ref-impls/src/TIP403Registry.sol',
-              },
-              {
                 text: 'Rust Implementation',
                 link: 'https://github.com/tempoxyz/tempo/tree/main/crates/precompiles/src/tip403_registry',
               },
@@ -523,10 +591,6 @@ export default defineConfig({
                   {
                     text: 'Specification',
                     link: '/protocol/fees/spec-fee-amm',
-                  },
-                  {
-                    text: 'Reference Implementation',
-                    link: 'https://github.com/tempoxyz/tempo/blob/main/tips/ref-impls/src/FeeManager.sol',
                   },
                   {
                     text: 'Rust Implementation',
@@ -613,12 +677,8 @@ export default defineConfig({
                 link: '/protocol/exchange/exchange-balance',
               },
               {
-                text: 'Reference Implementation',
-                link: 'https://github.com/tempoxyz/tempo/blob/main/tips/ref-impls/src/stablecoinDex.sol',
-              },
-              {
                 text: 'Rust Implementation',
-                link: 'https://github.com/tempoxyz/tempo/tree/main/crates/precompiles/src/stablecoin_exchange',
+                link: 'https://github.com/tempoxyz/tempo/tree/main/crates/precompiles/src/stablecoin_dex',
               },
             ],
           },
@@ -666,6 +726,14 @@ export default defineConfig({
             collapsed: true,
             items: [
               {
+                text: 'T5 (Next)',
+                link: '/protocol/upgrades/t5',
+              },
+              {
+                text: 'T4 (Latest)',
+                link: '/protocol/upgrades/t4',
+              },
+              {
                 text: 'T3',
                 link: '/protocol/upgrades/t3',
               },
@@ -677,7 +745,7 @@ export default defineConfig({
           },
           {
             text: 'TIPs',
-            link: '/protocol/tips',
+            link: 'https://tips.sh/',
           },
         ],
       },
@@ -815,18 +883,47 @@ export default defineConfig({
                 link: '/guide/node/validator',
               },
               {
-                text: 'Operation',
-                link: '/guide/node/operate-validator',
+                text: 'Validator Onboarding',
+                link: '/guide/node/validator-setup',
               },
               {
-                text: 'ValidatorConfig V2',
-                link: '/guide/node/validator-config-v2',
+                text: 'Checking validator status',
+                link: '/guide/node/validator-status',
+              },
+              {
+                text: 'Controlling validator lifecycle',
+                link: '/guide/node/validator-lifecycle',
+              },
+              {
+                text: 'Managing validator keys',
+                link: '/guide/node/validator-keys',
+              },
+              {
+                text: 'Monitoring a validator',
+                link: '/guide/node/validator-monitoring',
+              },
+              {
+                text: 'Troubleshooting and FAQ',
+                link: '/guide/node/validator-troubleshooting',
               },
             ],
           },
           {
+            text: 'Node Security',
+            link: '/guide/node/security',
+          },
+          {
             text: 'Network Upgrades and Releases',
-            link: '/guide/node/network-upgrades',
+            items: [
+              {
+                text: 'Upgrade Cadence',
+                link: '/guide/node/upgrade-cadence',
+              },
+              {
+                text: 'Upgrades and Releases',
+                link: '/guide/node/network-upgrades',
+              },
+            ],
           },
           {
             text: 'Changelog',
@@ -1320,6 +1417,11 @@ export default defineConfig({
     {
       source: '/protocol/exchange/pathUSD',
       destination: '/protocol/exchange/quote-tokens#pathusd',
+      status: 301,
+    },
+    {
+      source: '/protocol/zones/overview',
+      destination: '/protocol/zones',
       status: 301,
     },
   ],

@@ -6,17 +6,17 @@ description: Build, test, and deploy smart contracts on Tempo using Foundry. Acc
 
 Tempo is supported as a first-class citizen in [Foundry](https://github.com/foundry-rs/foundry): the leading Ethereum development toolkit.
 
-Install the latest nightly to access Tempo's [protocol-level features](/protocol/) in `forge`, `cast`, `anvil`, and `chisel`, and to build, test, and deploy contracts that go [beyond the limits of standard EVM chains](/quickstart/evm-compatibility).
+Install the latest Foundry release to access Tempo's [protocol-level features](/protocol) in `forge`, `cast`, `anvil`, and `chisel`, and to build, test, and deploy contracts that go [beyond the limits of standard EVM chains](/quickstart/evm-compatibility).
 
 :::warning[`tempo-foundry` is deprecated]
-`tempo-foundry` and `foundryup -n tempo` are deprecated. Switch to upstream Foundry nightly with `foundryup --install nightly`.
+`tempo-foundry` and `foundryup -n tempo` are deprecated. Switch to the latest upstream Foundry release with `foundryup`.
 :::
 
 For general information about Foundry, see the [Foundry documentation](https://getfoundry.sh/).
 
 ## Get started with Foundry
 
-Install the latest Foundry nightly to get Tempo support.
+Install the latest Foundry release to get Tempo support.
 
 :::::steps
 
@@ -28,13 +28,13 @@ If you don't have `foundryup` installed yet:
 curl -L https://foundry.paradigm.xyz | bash
 ```
 
-### Install the latest Foundry nightly
+### Install or update Foundry
 
 ```bash
-foundryup --install nightly
+foundryup
 ```
 
-This installs the latest `nightly` release of [`forge`](https://getfoundry.sh/forge/overview#forge), [`cast`](https://getfoundry.sh/cast/overview#cast), [`anvil`](https://getfoundry.sh/anvil/overview#anvil), and [`chisel`](https://getfoundry.sh/chisel/overview#chisel).
+This installs the latest versioned release of [`forge`](https://getfoundry.sh/forge/overview#forge), [`cast`](https://getfoundry.sh/cast/overview#cast), [`anvil`](https://getfoundry.sh/anvil/overview#anvil), and [`chisel`](https://getfoundry.sh/chisel/overview#chisel).
 
 
 :::tip
@@ -108,6 +108,16 @@ Tempo's contract verifier is Sourcify-compatible. Configure verification with `V
 
 The `[etherscan]` table in `foundry.toml` is for Etherscan-style verifiers, not Tempo's verifier.
 
+### Using `foundry-toolchain` in your CI
+
+Use the [`foundry-toolchain`](https://github.com/foundry-rs/foundry-toolchain) GitHub Action to install Foundry in your CI.
+Tempo support is included in the latest Foundry release, so no special configuration is needed.
+
+```yaml
+- name: Install Foundry
+  uses: foundry-rs/foundry-toolchain@v1
+```
+
 ## Use Foundry for your workflows
 
 All standard Foundry commands are supported out of the box.
@@ -129,7 +139,7 @@ forge script script/Mail.s.sol
 
 ```bash
 # Set environment variables
-export TEMPO_RPC_URL=https://rpc.tempo.xyz
+export TEMPO_RPC_URL=https://rpc.moderato.tempo.xyz
 export VERIFIER_URL=https://contracts.tempo.xyz
 
 # Optional: create a new keypair and request some testnet tokens from the faucet.
@@ -152,15 +162,6 @@ forge create src/Mail.sol:Mail \
   --tempo.fee-token <FEE_TOKEN_ADDRESS> \
   --rpc-url $TEMPO_RPC_URL \
   --interactive \
-  --broadcast \
-  --verify \
-  --constructor-args 0x20c0000000000000000000000000000000000001
-
-# Deploy using an access key (delegated signing)
-forge create src/Mail.sol:Mail \
-  --tempo.access-key $ACCESS_KEY_PRIVATE_KEY \
-  --tempo.root-account $ROOT_ADDRESS \
-  --rpc-url $TEMPO_RPC_URL \
   --broadcast \
   --verify \
   --constructor-args 0x20c0000000000000000000000000000000000001
@@ -195,6 +196,8 @@ forge script script/Deploy.s.sol \
   --rpc-url $TEMPO_RPC_URL \
   --private-key $PRIVATE_KEY
 ```
+
+Use a root key for `forge create`. Access keys can sign calls but not deployments.
 
 For more verification options including verifying existing contracts and API verification, see [Contract Verification](/quickstart/verify-contracts).
 
@@ -285,8 +288,8 @@ cast send <CONTRACT_ADDRESS> 'increment()' \
 # Send with access key (delegated signing):
 # First authorize the key via Account Keychain precompile
 cast send 0xAAAAAAAA00000000000000000000000000000000 \
-  'authorizeKey(address,uint8,uint64,bool,(address,uint256)[])' \
-  $ACCESS_KEY_ADDR 0 1893456000 false "[]" \
+  'authorizeKey(address,uint8,(uint64,bool,(address,uint256,uint64)[],bool,(address,(bytes4,address[])[])[]))' \
+  $ACCESS_KEY_ADDR 0 '(1893456000,false,[],true,[])' \
   --rpc-url $TEMPO_RPC_URL \
   --private-key $ROOT_PRIVATE_KEY
 # Then send using the access key
@@ -296,13 +299,17 @@ cast send <CONTRACT_ADDRESS> 'increment()' \
   --tempo.root-account $ROOT_ADDRESS
 ```
 
+If the access key will be used with passkey or WebAuthn signatures, pass `2` for `SignatureType`. `1` is only for raw P256 signatures.
+
+Access-key transactions cannot create contracts, so use a root key for deployments or other flows that perform `CREATE`.
+
 ### Local Development with Anvil
 
 Anvil supports Tempo mode for local testing and forking Tempo networks:
 
 ```bash
-# Start anvil in Tempo mode
-anvil --tempo --hardfork t1
+# Start anvil in Tempo mode with T3 rules
+anvil --tempo --hardfork t3
 
 # Fork a live Tempo network for local testing
 anvil --tempo --fork-url $TEMPO_RPC_URL
@@ -358,36 +365,47 @@ Ledger and Trezor wallets are not yet compatible with any `--tempo.*` option.
 
 `cast keychain` provides a CLI interface to Tempo's [Account Keychain precompile](/protocol/transactions/AccountKeychain).
 
+Prefer this over hand-encoding `authorizeKey(...)` calldata when you are working from the CLI.
+
 :::info
 `cast keychain` only works on Tempo networks.
 :::
 
+`cast keychain` authorization takes a future expiry timestamp, `webauthn` for passkey-backed access keys, optional `TOKEN:AMOUNT:PERIOD_SECONDS` limits for recurring budgets, and `--scope` for target, selector, and recipient restrictions.
+
+`cast keychain` sends the Account Keychain ABI directly, so a non-expiring key uses `18446744073709551615` (`type(uint64).max`) as the expiry value. This differs from tx-level `key_authorization`, where a non-expiring key is represented by omitting `expiry`. Do not pass `0`.
+
 ```bash
-# Authorize a new access key (signature types: secp256k1, p256, webauthn; expiry 0 = never):
-cast keychain authorize <KEY_ID> secp256k1 0 \
+# Access keys must be authorized with a future expiry timestamp.
+EXPIRY=$(($(date +%s) + 86400))
+
+# For a non-expiring key via direct precompile ABI / cast keychain, use:
+NEVER_EXPIRES=18446744073709551615
+
+# Authorize a new access key (signature types: secp256k1, p256, webauthn):
+cast keychain authorize <KEY_ID> secp256k1 $EXPIRY \
   --rpc-url $TEMPO_RPC_URL \
   --private-key $PRIVATE_KEY
 
 # Authorize with a spending limit (TOKEN:AMOUNT or TOKEN:AMOUNT:PERIOD_SECONDS):
-cast keychain authorize <KEY_ID> secp256k1 0 \
+cast keychain authorize <KEY_ID> secp256k1 $EXPIRY \
   --limit <TOKEN_ADDRESS>:1000000 \
   --rpc-url $TEMPO_RPC_URL \
   --private-key $PRIVATE_KEY
 
 # Authorize with call scopes (restrict to specific contracts/functions):
-cast keychain authorize <KEY_ID> secp256k1 0 \
+cast keychain authorize <KEY_ID> secp256k1 $EXPIRY \
   --scope <TOKEN_ADDRESS>:transfer,approve \
   --rpc-url $TEMPO_RPC_URL \
   --private-key $PRIVATE_KEY
 
 # Authorize with call scope restricted to a specific recipient:
-cast keychain authorize <KEY_ID> secp256k1 0 \
+cast keychain authorize <KEY_ID> secp256k1 $EXPIRY \
   --scope <TOKEN_ADDRESS>:transfer@<RECIPIENT_ADDRESS> \
   --rpc-url $TEMPO_RPC_URL \
   --private-key $PRIVATE_KEY
 
 # Full example: 24h expiry + spending limit + call scope:
-EXPIRY=$(($(date +%s) + 86400))
 cast keychain authorize <KEY_ID> secp256k1 $EXPIRY \
   --limit <TOKEN_ADDRESS>:1000000 \
   --scope <TOKEN_ADDRESS>:transfer \
@@ -416,11 +434,44 @@ cast keychain remove-scope <KEY_ID> <TARGET_ADDRESS> \
   --rpc-url $TEMPO_RPC_URL \
   --private-key $PRIVATE_KEY
 
-# Query key info (read-only):
-cast keychain key-info <ACCOUNT> <KEY_ID> \
+# Query key provisioning status (read-only):
+cast keychain check <ACCOUNT> <KEY_ID> \
   --rpc-url $TEMPO_RPC_URL
 
-# Query remaining spending limit:
-cast keychain remaining-limit <ACCOUNT> <KEY_ID> <TOKEN_ADDRESS> \
+# Query remaining spending limit via the precompile directly:
+cast call 0xAAAAAAAA00000000000000000000000000000000 \
+  'getRemainingLimitWithPeriod(address,address,address)(uint256,uint64)' \
+  <ACCOUNT> <KEY_ID> <TOKEN_ADDRESS> \
   --rpc-url $TEMPO_RPC_URL
 ```
+
+## T2 → T3 migration
+
+:::info[Migration appendix]
+This appendix is kept for an integrator cooldown period after the T3 mainnet activation on Apr 27, 2026. It will be removed in a future docs revision.
+:::
+
+If you are migrating a pre-T3 integration, this is the key change: direct `authorizeKey(...)` calls must switch from the legacy ABI to the tuple-form TIP-1011 ABI used in the [`cast send` example above](#interact--debug-with-cast). If you need periodic limits or call scopes, fill those arrays instead of passing `[]`. The flattened seven-argument form is not equivalent.
+
+### Check your `authorizeKey(...)` migration with `cast`
+
+Most users can skip this if they use [`cast keychain`](#cast-keychain) or the tuple-form `cast send` example above. This is mainly for hand-encoded calldata.
+
+```bash
+# Legacy pre-T3 selector:
+cast sig 'authorizeKey(address,uint8,uint64,bool,(address,uint256)[])'
+
+# Incorrect flattened post-T3 form. This is not accepted onchain:
+cast sig 'authorizeKey(address,uint8,uint64,bool,(address,uint256,uint64)[],bool,(address,(bytes4,address[])[])[])'
+
+# Correct post-T3 tuple-form selector:
+cast sig 'authorizeKey(address,uint8,(uint64,bool,(address,uint256,uint64)[],bool,(address,(bytes4,address[])[])[]))'
+
+# Build the exact post-T3 calldata locally:
+cast calldata 'authorizeKey(address,uint8,(uint64,bool,(address,uint256,uint64)[],bool,(address,(bytes4,address[])[])[]))' \
+  $ACCESS_KEY_ADDR 0 '(1893456000,false,[],true,[])'
+```
+
+The expected selectors are `0x54063a55`, `0x203e2736`, and `0x980a6025`.
+
+After T3 activation, the legacy selector reverts with `LegacyAuthorizeKeySelectorChanged(0x980a6025)`. Use the tuple-form `cast send` example above when you are ready to broadcast.

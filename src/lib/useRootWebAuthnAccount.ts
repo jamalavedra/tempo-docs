@@ -3,8 +3,8 @@
 import { useQuery } from '@tanstack/react-query'
 import type { WebAuthnP256 } from 'viem/tempo'
 import { Account } from 'viem/tempo'
-import { useConnection } from 'wagmi'
-import { config, webAuthnRpId } from '../wagmi.config.ts'
+import { useConfig, useConnection } from 'wagmi'
+import { webAuthnRpId } from '../wagmi.config.ts'
 
 type RootWebAuthnAccount = ReturnType<typeof Account.fromWebAuthnP256>
 type RootWebAuthnCredential = WebAuthnP256.P256Credential
@@ -17,7 +17,10 @@ type RootWebAuthnAccountProvider = {
   request: (args: { method: 'eth_accounts' }) => Promise<readonly `0x${string}`[]>
 }
 
+const rootWebAuthnAccountTimeoutMs = 30_000
+
 export function useRootWebAuthnAccount() {
+  const config = useConfig()
   const { address, connector } = useConnection()
 
   return useQuery({
@@ -29,7 +32,11 @@ export function useRootWebAuthnAccount() {
 
       const provider = await connector.getProvider()
       if (isRootWebAuthnAccountProvider(provider)) {
-        await waitForProviderAccount(provider, address as `0x${string}`)
+        await waitForProviderAccount(
+          provider,
+          address as `0x${string}`,
+          rootWebAuthnAccountTimeoutMs,
+        )
 
         return provider.getAccount({
           accessKey: false,
@@ -38,12 +45,17 @@ export function useRootWebAuthnAccount() {
         })
       }
 
-      const credential = await waitForStoredCredential(address as `0x${string}`)
+      const credential = await waitForStoredCredential(
+        config,
+        address as `0x${string}`,
+        rootWebAuthnAccountTimeoutMs,
+      )
       return accountFromCredential(credential)
     },
     refetchOnReconnect: false,
     refetchOnWindowFocus: false,
-    retry: false,
+    retry: 2,
+    retryDelay: 500,
     staleTime: Number.POSITIVE_INFINITY,
   })
 }
@@ -82,6 +94,7 @@ async function waitForProviderAccount(
 }
 
 async function waitForStoredCredential(
+  config: ReturnType<typeof useConfig>,
   address: `0x${string}`,
   timeoutMs = 5_000,
 ): Promise<RootWebAuthnCredential> {
