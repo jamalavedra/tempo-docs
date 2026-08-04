@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { getDemoStep } from './helpers'
 
 test('send a payment', async ({ page }) => {
   test.setTimeout(120000)
@@ -16,7 +17,7 @@ test('send a payment', async ({ page }) => {
     },
   })
 
-  await page.goto('/guide/payments/send-a-payment')
+  await page.goto('/docs/guide/payments/send-a-payment')
 
   // Step 1: Sign in
   const signUpButton = page.getByRole('button', { name: 'Sign in' }).first()
@@ -39,7 +40,8 @@ test('send a payment', async ({ page }) => {
   })
 
   // Step 3: Send payment
-  const enterDetailsButton = page.getByRole('button', { name: 'Enter details' }).first()
+  const sendPaymentStep = getDemoStep(page, 'Send 100 AlphaUSD to a recipient.')
+  const enterDetailsButton = sendPaymentStep.getByRole('button', { name: 'Enter details' })
   await expect(enterDetailsButton).toBeVisible()
   await enterDetailsButton.click()
 
@@ -49,7 +51,7 @@ test('send a payment', async ({ page }) => {
   await memoInput.fill('test-memo')
 
   // Click send
-  const sendButton = page.getByRole('button', { name: 'Send' }).first()
+  const sendButton = sendPaymentStep.getByRole('button', { name: 'Send' })
   await sendButton.click()
 
   // Wait for transaction receipt link

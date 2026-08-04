@@ -5,18 +5,22 @@ import type { Chain, Client, Transport } from 'viem'
 import { parseUnits } from 'viem'
 import { mnemonicToAccount } from 'viem/accounts'
 import { Actions } from 'viem/tempo'
-import { useBlockNumber, useClient, useConnection } from 'wagmi'
+import { useBlockNumber, useClient, useConnections } from 'wagmi'
 import { Hooks } from 'wagmi/tempo'
+import { isFundableWalletConnector } from '../../../lib/wallets'
 import { Button, Step } from '../../Demo'
 import { alphaUsd } from '../../tokens'
 import type { DemoStepProps } from '../types'
 
 export function AddFundsToWallet(props: DemoStepProps) {
   const { stepNumber = 2, last = false } = props
-  const { address, connector } = useConnection()
-  const hasNonWebAuthnWallet = Boolean(
-    address && connector?.id !== 'webAuthn' && connector?.id !== 'xyz.tempo',
+  const isE2E = import.meta.env.VITE_E2E === 'true'
+  const connections = useConnections()
+  const walletConnection = connections.find((c) =>
+    isFundableWalletConnector(c.connector, { includeWebAuthn: isE2E }),
   )
+  const address = walletConnection?.accounts[0]
+  const hasNonWebAuthnWallet = Boolean(address)
   const queryClient = useQueryClient()
 
   const { data: balance, refetch: balanceRefetch } = Hooks.token.useGetBalance({
@@ -28,7 +32,7 @@ export function AddFundsToWallet(props: DemoStepProps) {
   })
   const { data: blockNumber } = useBlockNumber({
     query: {
-      enabled: Boolean(hasNonWebAuthnWallet && (!balance || balance < 0)),
+      enabled: Boolean(hasNonWebAuthnWallet && (!balance || balance.amount < 0)),
       refetchInterval: 1_500,
     },
   })
@@ -68,7 +72,7 @@ export function AddFundsToWallet(props: DemoStepProps) {
   }, [hasNonWebAuthnWallet, balance, last])
 
   const actions = React.useMemo(() => {
-    if (balance && balance > 0n)
+    if (balance && balance.amount > 0n)
       return (
         <Button
           disabled={!hasNonWebAuthnWallet || fundAccount.isPending}
@@ -96,7 +100,7 @@ export function AddFundsToWallet(props: DemoStepProps) {
   return (
     <Step
       active={active}
-      completed={Boolean(hasNonWebAuthnWallet && balance && balance > 0n)}
+      completed={Boolean(hasNonWebAuthnWallet && balance && balance.amount > 0n)}
       actions={actions}
       error={fundAccount.error}
       number={stepNumber}

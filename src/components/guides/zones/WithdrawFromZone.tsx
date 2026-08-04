@@ -7,10 +7,10 @@ import { http as zoneHttp, zoneModerato } from 'viem/tempo/zones'
 import { useConnection, useConnectorClient, usePublicClient } from 'wagmi'
 import { Hooks } from 'wagmi/tempo'
 import {
-  getZoneTransportConfig,
+  getZoneRpcHttpUrl,
+  getZoneRpcTransportConfig,
   moderatoZoneRpcUrls,
   publicSettlementLookbackBlocks,
-  stripRpcBasicAuth,
   zoneRpcSyncTimeout,
 } from '../../../lib/private-zones.ts'
 import { useRootWebAuthnAccount } from '../../../lib/useRootWebAuthnAccount.ts'
@@ -35,7 +35,10 @@ type WithdrawalMode = 'standard' | 'authenticated'
 
 type ZoneClientLike = {
   token: {
-    getBalance: (parameters: { account: Hex; token: Hex }) => Promise<bigint>
+    getBalance: (parameters: {
+      account: Hex
+      token: Hex
+    }) => Promise<{ amount: bigint; decimals: number; formatted: string }>
   }
   zone: {
     requestVerifiableWithdrawalSync: (parameters: {
@@ -110,8 +113,8 @@ function ConnectedZoneFlow(props: { address: Hex; mode: WithdrawalMode }) {
             account: rootWebAuthnAccount,
             chain: zoneModerato(ZONE_ID),
             transport: zoneHttp(
-              stripRpcBasicAuth(moderatoZoneRpcUrls[ZONE_ID]),
-              getZoneTransportConfig(moderatoZoneRpcUrls[ZONE_ID]),
+              getZoneRpcHttpUrl(ZONE_ID, moderatoZoneRpcUrls[ZONE_ID]),
+              getZoneRpcTransportConfig(ZONE_ID, moderatoZoneRpcUrls[ZONE_ID]),
             ),
           }).extend(tempoActions()) as unknown as ZoneClientLike)
         : undefined,
@@ -150,10 +153,11 @@ function ConnectedZoneFlow(props: { address: Hex; mode: WithdrawalMode }) {
     queryFn: async () => {
       if (!zoneClient) throw new Error('zone client not ready')
 
-      return zoneClient.token.getBalance({
+      const { amount } = await zoneClient.token.getBalance({
         account: address,
         token: pathUsd,
       })
+      return amount
     },
     staleTime: 30_000,
   })
@@ -217,11 +221,14 @@ function ConnectedZoneFlow(props: { address: Hex; mode: WithdrawalMode }) {
       if (!rootWebAuthnAccount) throw new Error('root account not ready')
       if (withdrawalFeeQuery.data === undefined) throw new Error('withdrawal fee not ready')
 
-      const currentRootBalance = await Actions.token.getBalance(connectorClient as never, {
-        account: address,
-        token: pathUsd,
-      })
-      const currentZoneBalance = await zoneClient.token.getBalance({
+      const { amount: currentRootBalance } = await Actions.token.getBalance(
+        connectorClient as never,
+        {
+          account: address,
+          token: pathUsd,
+        },
+      )
+      const { amount: currentZoneBalance } = await zoneClient.token.getBalance({
         account: address,
         token: pathUsd,
       })
@@ -295,14 +302,18 @@ function ConnectedZoneFlow(props: { address: Hex; mode: WithdrawalMode }) {
           : 0n
 
       const [currentRootBalance, currentZoneBalance, latest] = await Promise.all([
-        Actions.token.getBalance(connectorClient as never, {
-          account: address,
-          token: pathUsd,
-        }),
-        zoneClient.token.getBalance({
-          account: address,
-          token: pathUsd,
-        }),
+        Actions.token
+          .getBalance(connectorClient as never, {
+            account: address,
+            token: pathUsd,
+          })
+          .then(({ amount }) => amount),
+        zoneClient.token
+          .getBalance({
+            account: address,
+            token: pathUsd,
+          })
+          .then(({ amount }) => amount),
         publicClient.getBlockNumber(),
       ])
 
@@ -334,7 +345,7 @@ function ConnectedZoneFlow(props: { address: Hex; mode: WithdrawalMode }) {
     retry: false,
   })
 
-  const hasRootBalance = Boolean(rootBalance && rootBalance > 0n)
+  const hasRootBalance = Boolean(rootBalance && rootBalance.amount > 0n)
   const settlementTxHash = withdrawalConfirmationQuery.data?.txHash
   const withdrawalConfirmed = Boolean(settlementTxHash)
   const topUpReceipt = topUpMutation.data?.receipt

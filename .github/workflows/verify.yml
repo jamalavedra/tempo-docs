@@ -3,6 +3,7 @@ on:
   push:
     branches: [main]
   pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   workflow_dispatch:
 
 permissions: {}
@@ -39,7 +40,7 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Check
         run: pnpm run check
@@ -47,16 +48,70 @@ jobs:
       - name: Check types
         run: pnpm run check:types
 
+      - name: Check internal anchors
+        run: pnpm run check:anchors
+
+      - name: Test
+        run: pnpm run test
+
       - name: Build
         run: pnpm run build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_OPTIONS: --max-old-space-size=4096
+          VERCEL: "1"
+          VERCEL_ENV: production
+
+      - name: Check generated public links
+        run: node scripts/check-generated-public-links.mjs
+
+      - name: Audit generated Markdown
+        run: pnpm run check:markdown
+
+  sitemap:
+    name: Sitemap
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+        with:
+          run_install: false
+          version: 10.28.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: 24.12.0
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Vercel output
+        run: pnpm run build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_OPTIONS: --max-old-space-size=4096
+          VERCEL: "1"
+          VERCEL_ENV: production
+
+      - name: Check sitemap coverage
+        run: node --experimental-strip-types scripts/check-vercel-sitemap.ts
 
   ci-gate:
     name: CI Gate
     if: always()
-    needs: [check, e2e]
+    needs: [check, e2e, sitemap]
     runs-on: ubuntu-latest
     permissions: {}
     steps:
@@ -70,7 +125,7 @@ jobs:
     name: E2E Tests (${{ matrix.shard }}/${{ strategy.job-total }})
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/playwright:v1.58.0-noble
+      image: mcr.microsoft.com/playwright:v1.61.1-noble
       options: --user 1001
     timeout-minutes: 15
     permissions:
@@ -100,7 +155,15 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build app for E2E
+        run: pnpm run build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_OPTIONS: --max-old-space-size=4096
+          VITE_E2E: "true"
+          VITE_USE_HTTP: "true"
 
       - name: Run Playwright tests
         run: pnpm run test:e2e --shard=${{ matrix.shard }}/3

@@ -1,0 +1,51 @@
+# lychee configuration for the Tempo docs site.
+# Validates external links in markdown, MDX, and config sources.
+# See https://lychee.cli.rs/usage/config/
+
+# Network settings
+max_redirects = 10
+max_concurrency = 16
+timeout = 20
+retry_wait_time = 2
+
+# Some hosts (Twitter, LinkedIn, Cloudflare-protected sites) reject the default UA.
+user_agent = "Mozilla/5.0 (compatible; tempo-docs-link-checker/1.0; +https://tempo.xyz/developers)"
+
+# Auth-walled or rate-limited statuses are still "reachable".
+accept = ["200..=299", "401", "403", "429"]
+
+exclude_path = [
+  "node_modules",
+  "dist",
+  ".vocs",
+  ".vercel",
+  "playwright-report",
+  "test-results",
+  "patches",
+]
+
+exclude = [
+  # Local / placeholder hosts.
+  "^https?://localhost",
+  "^https?://127\\.0\\.0\\.1",
+  "^https?://0\\.0\\.0\\.0",
+  "^https?://\\[::1\\]",
+  "^https?://([a-z0-9-]+\\.)*example\\.(com|org|net)",
+  # SVG xmlns reference, not a real link.
+  "^http://www\\.w3\\.org/2000/svg$",
+  # POST-only AI search endpoint referenced in vocs.config.ts.
+  "^https://tempo\\.xyz/developers/api/search$",
+  # MPP service roots expose paid API routes rather than browser landing pages.
+  "^https://[a-z0-9-]+\\.mpp\\.paywithlocus\\.com/?$",
+  # Verified app pages that reject automated link-check requests.
+  "^https://dashboard\\.pimlico\\.io/?$",
+  "^https://docs\\.elliptic\\.co/?$",
+  "^https://hub\\.conduit\\.xyz/tempo-testnet/?$",
+  # Temporary upstream error on the published TIP page.
+  "^https://tips\\.sh/1066/?$",
+]
+
+# Reuse cached results across runs.
+cache = true
+max_cache_age = "1d"
+no_progress = true

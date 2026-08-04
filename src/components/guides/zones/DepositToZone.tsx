@@ -7,9 +7,9 @@ import { http as zoneHttp, zoneModerato } from 'viem/tempo/zones'
 import { useConnection, useConnectorClient, usePublicClient } from 'wagmi'
 import { Hooks } from 'wagmi/tempo'
 import {
-  getZoneTransportConfig,
+  getZoneRpcHttpUrl,
+  getZoneRpcTransportConfig,
   moderatoZoneRpcUrls,
-  stripRpcBasicAuth,
 } from '../../../lib/private-zones.ts'
 import { useRootWebAuthnAccount } from '../../../lib/useRootWebAuthnAccount.ts'
 import { useZoneAuthorization, type ZoneAuthClientLike } from '../../../lib/useZoneAuthorization.ts'
@@ -26,7 +26,10 @@ type DepositMode = 'plaintext' | 'encrypted'
 
 type ZoneClientLike = {
   token: {
-    getBalance: (parameters: { account: Hex; token: Hex }) => Promise<bigint>
+    getBalance: (parameters: {
+      account: Hex
+      token: Hex
+    }) => Promise<{ amount: bigint; decimals: number; formatted: string }>
   }
   zone: ZoneAuthClientLike['zone']
 }
@@ -92,8 +95,8 @@ function ConnectedZoneFlow(props: { address: Hex; mode: DepositMode }) {
             account: rootWebAuthnAccount,
             chain: zoneModerato(ZONE_ID),
             transport: zoneHttp(
-              stripRpcBasicAuth(moderatoZoneRpcUrls[ZONE_ID]),
-              getZoneTransportConfig(moderatoZoneRpcUrls[ZONE_ID]),
+              getZoneRpcHttpUrl(ZONE_ID, moderatoZoneRpcUrls[ZONE_ID]),
+              getZoneRpcTransportConfig(ZONE_ID, moderatoZoneRpcUrls[ZONE_ID]),
             ),
           }).extend(tempoActions()) as unknown as ZoneClientLike)
         : undefined,
@@ -173,6 +176,7 @@ function ConnectedZoneFlow(props: { address: Hex; mode: DepositMode }) {
           account: address,
           token: pathUsd,
         })
+        .then(({ amount }) => amount)
         .catch(() => 0n)
 
       const creditedAmount = getNetZoneDepositAmount(
@@ -243,10 +247,11 @@ function ConnectedZoneFlow(props: { address: Hex; mode: DepositMode }) {
       if (!zoneClient) throw new Error('zone client not ready')
 
       try {
-        return await zoneClient.token.getBalance({
+        const { amount } = await zoneClient.token.getBalance({
           account: address,
           token: pathUsd,
         })
+        return amount
       } catch {
         return null
       }
@@ -263,7 +268,7 @@ function ConnectedZoneFlow(props: { address: Hex; mode: DepositMode }) {
     retry: false,
   })
 
-  const hasRootBalance = Boolean(rootBalance && rootBalance > 0n)
+  const hasRootBalance = Boolean(rootBalance && rootBalance.amount > 0n)
   const zoneDepositProcessed = Boolean(
     targetZoneBalance !== undefined &&
       typeof zoneBalanceQuery.data === 'bigint' &&

@@ -1,0 +1,142 @@
+import { readdirSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { expect, test } from '@playwright/test'
+
+// Social-card crawlers (Slack, X, iMessage, LinkedIn) read the raw HTML head
+// without executing JavaScript, so per-page title/description/og tags must
+// survive Vocs' head dedupe in the *prerendered* output — not just after
+// hydration. These requests use the raw HTTP response, not a browser page.
+//
+// Only meaningful against the built artifact (CI serves `dist/preview.js`);
+// the local dev server serves the marketing SPA shell for these routes.
+test.skip(!process.env.CI, 'requires the production build output')
+
+async function fetchHead(request: import('@playwright/test').APIRequestContext, path: string) {
+  const response = await request.get(path)
+  expect(response.status(), `${path} should be served`).toBe(200)
+  const html = await response.text()
+  const headEnd = html.indexOf('</head>')
+  expect(headEnd, `${path} should have a <head>`).toBeGreaterThan(0)
+  return html.slice(0, headEnd)
+}
+
+function metaContent(head: string, selector: string) {
+  const match = head.match(
+    new RegExp(`<meta[^>]*(?:property|name)="${selector}"[^>]*content="([^"]*)"`),
+  )
+  const attrFirst = head.match(
+    new RegExp(`<meta[^>]*content="([^"]*)"[^>]*(?:property|name)="${selector}"`),
+  )
+  return match?.[1] ?? attrFirst?.[1]
+}
+
+function titleElements(head: string) {
+  return head.match(/<title(?:\s[^>]*)?>[\s\S]*?<\/title>/gi) ?? []
+}
+
+const cases: {
+  path: string
+  title: string
+  ogTitle: string
+  descriptionIncludes: string
+  ogImageIncludes: string
+}[] = [
+  {
+    path: '/',
+    title: 'Tempo developers',
+    ogTitle: 'Tempo developers',
+    descriptionIncludes: 'payments-first Layer 1 blockchain',
+    ogImageIncludes: '/og-docs.png',
+  },
+  {
+    path: '/blog',
+    title: 'Blog ⋅ Tempo',
+    ogTitle: 'Blog',
+    descriptionIncludes: 'Engineering deep dives',
+    ogImageIncludes: 'section=BLOG',
+  },
+  {
+    path: '/build/tempo-transactions',
+    title: 'Tempo Transactions',
+    ogTitle: 'Tempo Transactions',
+    descriptionIncludes: 'Batch, sponsor, schedule',
+    ogImageIncludes: 'section=BUILD',
+  },
+  {
+    path: '/performance',
+    title: 'Performance ⋅ Tempo',
+    ogTitle: 'Performance',
+    descriptionIncludes: 'Nightly benchmarks',
+    ogImageIncludes: 'section=PERFORMANCE',
+  },
+  {
+    path: '/docs',
+    title: 'Tempo Developer Docs: APIs, SDKs &amp; Guides',
+    ogTitle: 'Tempo developer documentation',
+    descriptionIncludes: 'Tempo docs for integration paths',
+    ogImageIncludes: '/og-docs.png',
+  },
+  {
+    path: '/docs/guide/payments/send-a-payment',
+    title: 'Send a Stablecoin Payment on Tempo | Docs',
+    ogTitle: 'How to send a stablecoin payment on Tempo',
+    descriptionIncludes: 'stablecoin payments between accounts',
+    ogImageIncludes: 'subsection=PAYMENTS',
+  },
+  {
+    path: '/docs/api',
+    title: 'Start with the Tempo API | Tempo Docs',
+    ogTitle: 'Tempo API',
+    descriptionIncludes: 'official Tempo blockchain API',
+    ogImageIncludes: 'section=API',
+  },
+  {
+    path: '/docs/api/console',
+    title: 'How to Use the Tempo API Console | Docs',
+    ogTitle: 'Using the Tempo API Console',
+    descriptionIncludes: 'create projects and API keys',
+    ogImageIncludes: 'section=API',
+  },
+]
+
+for (const c of cases) {
+  test(`prerendered head for ${c.path}`, async ({ request }) => {
+    const head = await fetchHead(request, c.path)
+
+    expect(titleElements(head), `${c.path} should have one exact document title`).toEqual([
+      `<title>${c.title}</title>`,
+    ])
+    expect(metaContent(head, 'og:title')).toBe(c.ogTitle)
+    expect(metaContent(head, 'description')).toContain(c.descriptionIncludes)
+    expect(metaContent(head, 'og:description')).toContain(c.descriptionIncludes)
+    expect(metaContent(head, 'og:image')).toContain(c.ogImageIncludes)
+    expect(metaContent(head, 'twitter:title')).toBe(c.ogTitle)
+
+    if (c.path.startsWith('/docs')) {
+      expect(metaContent(head, 'article:published_time')).toBeUndefined()
+      expect(metaContent(head, 'article:modified_time')).toBeUndefined()
+    }
+  })
+}
+
+// Published slugs come from blogs/*.md filenames (all-caps files are repo
+// docs, not posts) — same rule as src/marketing/blogPlugin.ts. Reading the
+// filesystem instead of scraping the blog index means a post can't silently
+// escape coverage because of a markup change.
+const blogSlugs = readdirSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'blogs'))
+  .filter((f) => f.endsWith('.md') && !/^[A-Z0-9_-]+\.md$/.test(f))
+  .map((f) => f.replace(/\.md$/, ''))
+
+for (const slug of blogSlugs) {
+  test(`prerendered head for blog post /blog/${slug}`, async ({ request }) => {
+    const head = await fetchHead(request, `/blog/${slug}`)
+
+    const ogTitle = metaContent(head, 'og:title')
+    expect(ogTitle).toBeTruthy()
+    expect(ogTitle).not.toBe('Tempo') // generic site fallback means the post head lost the dedupe
+    expect(metaContent(head, 'og:type')).toBe('article')
+    expect(metaContent(head, 'article:published_time')).toMatch(/^\d{4}-\d{2}-\d{2}/)
+    expect(metaContent(head, 'og:image')).toContain('section=BLOG')
+  })
+}

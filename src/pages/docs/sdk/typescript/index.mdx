@@ -1,0 +1,133 @@
+---
+title: "TypeScript SDKs: Viem extension and Account SDK"
+seoTitle: "TypeScript SDKs: Viem & Account SDK | Docs"
+description: Build blockchain apps with Tempo using Viem and Wagmi. Send transactions, manage tokens, and integrate AMM pools with TypeScript.
+---
+
+import { Cards, Card } from 'vocs'
+
+# TypeScript SDKs: Viem extension and Account SDK
+
+Tempo distributes TypeScript SDKs for:
+- [Viem](https://viem.sh): TypeScript interface for EVM blockchains
+- [Wagmi](https://wagmi.sh): React Hooks (and reactive primitives) for EVM blockchains
+
+The Tempo extensions cover common chain operations such as querying state, sending Tempo Transactions, and managing tokens and AMM pools.
+
+<Cards>
+  <Card
+    description="Set up a Viem client to interact with Tempo"
+    to="https://viem.sh/tempo"
+    icon="lucide:workflow"
+    title="Viem Setup"
+  />
+  <Card
+    description="Set up a Wagmi configuration with Tempo"
+    to="https://wagmi.sh/tempo"
+    icon="lucide:workflow"
+    title="Wagmi Setup"
+  />
+</Cards>
+
+:::tip
+
+**When should I use Wagmi vs. Viem?**
+
+- **Viem** is best suited for **libraries, tooling, servers, scripting, etc** – a low-level and stateless interface for the EVM
+- **Wagmi** is best suited for **applications & wallets** – a high-level and stateful interface for the EVM (React Hooks, Vanilla JS, etc)
+
+:::
+
+## Viem SDK for Tempo
+
+Use Viem for Node.js scripts, servers, and other headless applications.
+
+### Connect to Tempo Testnet and send a stablecoin
+
+Install Viem:
+
+```bash
+npm install viem
+```
+
+Connect to Tempo Testnet, fund an account, read its pathUSD balance, and send a confirmed transfer.
+
+```ts twoslash [testnet.ts] filename="testnet.ts"
+// [!include ~/snippets/node-viem-quickstart.ts:testnet]
+```
+
+:::warning
+This example is testnet-only. For mainnet, use a funded mainnet account and token, omit `testnet: true`, and remove the faucet call.
+:::
+
+`balance` includes the amount in base units, the token's decimals, and a formatted value. `transferSync` waits for the transaction to be included; `receipt.transactionHash` identifies the transaction.
+
+The same client includes standard Viem methods such as `getBlockNumber`, `getTransaction`, `getTransactionReceipt`, `getLogs`, `readContract`, and `simulateContract`.
+
+### Tempo Transactions
+
+| Goal | Viem input | Guide |
+| --- | --- | --- |
+| Send multiple calls together | `calls` | [Batch calls](/docs/guide/tempo-transaction#batch-calls) |
+| Pay fees with a chosen token | `feeToken` | [Configurable fee tokens](/docs/guide/tempo-transaction#configurable-fee-tokens) |
+| Let another account pay the fees | `feePayer` | [Fee sponsorship](/docs/guide/tempo-transaction#fee-sponsorship) |
+| Send independent transaction sequences | `nonceKey` | [Concurrent transactions](/docs/guide/tempo-transaction#concurrent-transactions) |
+| Limit when a transaction can run | `validAfter` and `validBefore` | [Scheduled transactions](/docs/guide/tempo-transaction#scheduled-transactions) |
+
+### Tempo guides and API reference
+
+<Cards>
+  <Card
+    description="Send and accept stablecoins, attach memos, and configure payment controls"
+    to="/docs/guide/payments"
+    icon="lucide:send"
+    title="Payments"
+  />
+  <Card
+    description="Launch and operate a TIP-20 stablecoin"
+    to="/docs/guide/issuance"
+    icon="lucide:coins"
+    title="Stablecoin Issuance"
+  />
+  <Card
+    description="Trade stablecoins and provide liquidity"
+    to="/docs/guide/stablecoin-dex"
+    icon="lucide:arrow-left-right"
+    title="Stablecoin Exchange"
+  />
+  <Card
+    description="Use fee tokens, sponsorship, batching, access keys, and concurrent transactions"
+    to="/docs/guide/tempo-transaction"
+    icon="lucide:workflow"
+    title="Tempo Transactions"
+  />
+  <Card
+    description="Viem Actions for querying data, sending transactions, managing tokens & AMM pools, and more"
+    to="https://viem.sh/tempo/actions"
+    icon="lucide:workflow"
+    title="Actions"
+  />
+</Cards>
+
+## Wagmi SDK for Tempo
+
+<Cards>
+  <Card
+    description="Wagmi React Hooks for building apps on Tempo"
+    to="https://wagmi.sh/tempo/hooks"
+    icon="lucide:network"
+    title="Hooks"
+  />
+  <Card
+    description="Wagmi Connectors for connecting between wallets, apps, and Tempo"
+    to="https://wagmi.sh/tempo/connectors"
+    icon="lucide:square-stack"
+    title="Connectors"
+  />
+  <Card
+    description="Wagmi Actions for querying data, sending transactions, managing tokens & AMM pools, and more"
+    to="https://wagmi.sh/tempo/actions"
+    icon="lucide:workflow"
+    title="Actions"
+  />
+</Cards>

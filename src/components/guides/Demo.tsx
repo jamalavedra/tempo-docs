@@ -1,12 +1,10 @@
 'use client'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import type { VariantProps } from 'cva'
 import * as React from 'react'
-import { type Address, type BaseError, createClient, formatUnits } from 'viem'
+import type { Address, BaseError } from 'viem'
 import { tempoModerato } from 'viem/chains'
-import { tempoActions } from 'viem/tempo'
-import { http as zoneHttp, zoneModerato } from 'viem/tempo/zones'
-import { useAccount, useConnect, useConnections, useConnectorClient, useDisconnect } from 'wagmi'
+import { useAccount, useConnect, useConnections, useDisconnect } from 'wagmi'
 import { Hooks } from 'wagmi/tempo'
 import LucideCheck from '~icons/lucide/check'
 import LucideCopy from '~icons/lucide/copy'
@@ -16,27 +14,15 @@ import LucideRotateCcw from '~icons/lucide/rotate-ccw'
 import LucideWalletCards from '~icons/lucide/wallet-cards'
 import { cva, cx } from '../../../cva.config'
 import { usePostHogTracking } from '../../lib/posthog'
-import {
-  getZoneTransportConfig,
-  moderatoZoneRpcUrls,
-  stripRpcBasicAuth,
-} from '../../lib/private-zones.ts'
-import { useRootWebAuthnAccount } from '../../lib/useRootWebAuthnAccount.ts'
 import { useTempoWalletConnector, useWebAuthnConnector } from '../../wagmi.config'
 import { Container as ParentContainer } from '../Container'
+import { isFundableWalletConnector } from '../lib/wallets'
 import { alphaUsd } from './tokens'
 
 export { alphaUsd, betaUsd, pathUsd, thetaUsd } from './tokens'
 
 export const FAKE_RECIPIENT = '0xbeefcafe54750903ac1c8909323af7beb21ea2cb'
 export const FAKE_RECIPIENT_2 = '0xdeadbeef54750903ac1c8909323af7beb21ea2cb'
-
-type ZoneBalance = {
-  label: string
-  token: Address
-  zone: number
-  feeToken?: Address | undefined
-}
 
 export function useHydrated() {
   const [hydrated, setHydrated] = React.useState(false)
@@ -57,12 +43,12 @@ function getExplorerHost() {
   return tempoModerato.blockExplorers.default.url
 }
 
-export function ExplorerLink({ hash }: { hash: string }) {
+export function ExplorerLink({ hash, inline = false }: { hash: string; inline?: boolean }) {
   const { trackExternalLinkClick } = usePostHogTracking()
   const url = `${getExplorerHost()}/tx/${hash}`
 
   return (
-    <div className="mt-1">
+    <div className={inline ? 'inline-flex' : 'mt-1'}>
       <a
         href={url}
         target="_blank"
@@ -101,20 +87,30 @@ export function ReceiptHash({ hash }: { hash: string }) {
   )
 }
 
-export function ExplorerAccountLink({ address }: { address: string }) {
+export function ExplorerAccountLink({
+  address,
+  inline = false,
+  label = 'View account',
+  tab,
+}: {
+  address: string
+  inline?: boolean
+  label?: string
+  tab?: string
+}) {
   const { trackExternalLinkClick } = usePostHogTracking()
-  const url = `${getExplorerHost()}/account/${address}`
+  const url = `${getExplorerHost()}/address/${address}${tab ? `?tab=${tab}` : ''}`
 
   return (
-    <div className="mt-1">
+    <div className={inline ? 'inline-flex' : 'mt-1'}>
       <a
         href={url}
         target="_blank"
         rel="noreferrer"
         className="flex items-center gap-1 text-[13px] text-accent -tracking-[1%] hover:underline"
-        onClick={() => trackExternalLinkClick(url, 'View account')}
+        onClick={() => trackExternalLinkClick(url, label)}
       >
-        View account
+        {label}
         <LucideExternalLink className="size-3" />
       </a>
     </div>
@@ -134,7 +130,6 @@ export function Container(
           footerVariant: 'balances'
           tokens: Address[]
           balanceSource?: 'webAuthn' | 'wallet' | undefined
-          zoneBalances?: ZoneBalance[] | undefined
         }
       | {
           footerVariant: 'source'
@@ -165,8 +160,9 @@ export function Container(
     }
 
     if (source === 'wallet') {
-      const walletConnection = connections.find(
-        (c) => c.connector.id !== 'webAuthn' && c.connector.id !== 'xyz.tempo',
+      const includeWebAuthn = import.meta.env.VITE_E2E === 'true'
+      const walletConnection = connections.find((c) =>
+        isFundableWalletConnector(c.connector, { includeWebAuthn }),
       )
       return walletConnection?.accounts[0]
     }
@@ -177,15 +173,11 @@ export function Container(
   const footerElement = React.useMemo(() => {
     if (props.footerVariant === 'balances')
       return (
-        <Container.BalancesFooter
-          address={balanceAddress}
-          tokens={props.tokens || [alphaUsd]}
-          zoneBalances={props.zoneBalances}
-        />
+        <Container.BalancesFooter address={balanceAddress} tokens={props.tokens || [alphaUsd]} />
       )
     if (props.footerVariant === 'source') return <Container.SourceFooter src={props.src} />
     return null
-  }, [props, balanceAddress])
+  }, [props, balanceAddress, Container])
 
   return (
     <ParentContainer
@@ -223,12 +215,6 @@ export function Container(
 }
 
 export namespace Container {
-  type ZoneClientLike = {
-    token: {
-      getBalance: (parameters: { account: Address; token: Address }) => Promise<bigint>
-    }
-  }
-
   function BalancesFooterItem(props: { address: Address; token: Address }) {
     const queryClient = useQueryClient()
     const { address, token } = props
@@ -275,7 +261,7 @@ export namespace Container {
           <span />
         ) : (
           <span className="flex gap-1">
-            <span className="text-gray10">{formatUnits(balance ?? 0n, metadata.decimals)}</span>
+            <span className="text-gray10">{balance.formatted}</span>
             {metadata.symbol}
           </span>
         )}
@@ -283,74 +269,8 @@ export namespace Container {
     )
   }
 
-  function ZoneBalancesFooterItem(props: ZoneBalance & { address: Address }) {
-    const { address, token, zone } = props
-    const { data: connectorClient } = useConnectorClient()
-    const { data: rootWebAuthnAccount } = useRootWebAuthnAccount()
-    const zoneRpcUrl =
-      moderatoZoneRpcUrls[zone as keyof typeof moderatoZoneRpcUrls] ??
-      (
-        connectorClient?.chain as
-          | { zones?: Record<number, { rpcUrls: { default: { http: string[] } } }> }
-          | undefined
-      )?.zones?.[zone]?.rpcUrls.default.http[0]
-    const zoneClient = React.useMemo(
-      () =>
-        rootWebAuthnAccount && zoneRpcUrl
-          ? (createClient({
-              account: rootWebAuthnAccount,
-              chain: zoneModerato(zone),
-              transport: zoneHttp(
-                stripRpcBasicAuth(zoneRpcUrl),
-                getZoneTransportConfig(zoneRpcUrl),
-              ),
-            }).extend(tempoActions()) as unknown as ZoneClientLike)
-          : undefined,
-      [rootWebAuthnAccount, zone, zoneRpcUrl],
-    )
-    const { data: metadata, isPending: metadataIsPending } = Hooks.token.useGetMetadata({
-      token,
-    })
-    const { data: balance, isPending: balanceIsPending } = useQuery({
-      enabled: Boolean(address && zoneClient),
-      queryKey: ['demo-zone-balance', address, zone, token],
-      queryFn: async () => {
-        if (!zoneClient) throw new Error('zone client not ready')
-
-        return zoneClient.token.getBalance({
-          account: address,
-          token,
-        })
-      },
-      refetchInterval: (query) => {
-        if (query.state.error || query.state.data === undefined) return false
-
-        return 1_500
-      },
-      refetchOnReconnect: false,
-      refetchOnWindowFocus: false,
-      retry: false,
-      staleTime: 1_000,
-    })
-
-    if (balanceIsPending || metadataIsPending || balance === undefined || metadata === undefined) {
-      return <span />
-    }
-
-    return (
-      <span className="flex gap-1">
-        <span className="text-gray10">{formatUnits(balance, metadata.decimals)}</span>
-        {metadata.symbol}
-      </span>
-    )
-  }
-
-  export function BalancesFooter(props: {
-    address?: string | undefined
-    tokens: Address[]
-    zoneBalances?: ZoneBalance[] | undefined
-  }) {
-    const { address, tokens, zoneBalances } = props
+  export function BalancesFooter(props: { address?: string | undefined; tokens: Address[] }) {
+    const { address, tokens } = props
     const personalBalanceLabel = tokens.length > 1 ? 'Personal balances' : 'Personal balance'
 
     return (
@@ -368,21 +288,6 @@ export namespace Container {
             )}
           </div>
         </div>
-        {address &&
-          zoneBalances &&
-          zoneBalances.length > 0 &&
-          zoneBalances.map((zoneBalance) => (
-            <div
-              key={`${zoneBalance.zone}:${zoneBalance.token}:${zoneBalance.label}`}
-              className="grid grid-cols-[7rem_1px_minmax(0,1fr)] items-center gap-x-2 gap-y-1"
-            >
-              <span className="text-gray10">{zoneBalance.label} balance</span>
-              <div className="min-h-5 w-px self-stretch bg-gray4" />
-              <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-x-3 sm:gap-y-2">
-                <ZoneBalancesFooterItem address={address as Address} {...zoneBalance} />
-              </div>
-            </div>
-          ))}
       </div>
     )
   }
@@ -456,7 +361,7 @@ export function Step(
         <div className="flex items-center gap-3.5">
           <div
             className={cx(
-              'flex size-7 items-center justify-center rounded-full text-center text-[13px] text-black tabular-nums opacity-40 group-data-[completed=true]:opacity-100 dark:text-white',
+              'flex size-7 shrink-0 items-center justify-center rounded-full text-center text-[13px] text-black tabular-nums opacity-40 group-data-[completed=true]:opacity-100 dark:text-white',
               completed ? 'bg-green3' : 'bg-gray4',
             )}
           >
@@ -602,6 +507,7 @@ export function Button(
   const Element = render ? (p: typeof props) => React.cloneElement(render, p) : 'button'
   return (
     <Element
+      disabled={disabled ? true : undefined}
       className={buttonClassName({
         className,
         disabled,
@@ -615,7 +521,7 @@ export function Button(
 }
 
 const buttonClassName = cva({
-  base: 'relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-normal transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50',
+  base: 'relative inline-flex cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-md font-normal transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:cursor-default disabled:opacity-50',
   defaultVariants: {
     size: 'default',
     variant: 'default',
@@ -628,7 +534,7 @@ const buttonClassName = cva({
       default: 'h-[32px] px-[14px] text-[14px] -tracking-[2%]',
     },
     static: {
-      true: 'pointer-events-none',
+      true: 'pointer-events-none cursor-default',
     },
     variant: {
       accent: 'border bg-invert text-invert dark:border-dashed',
@@ -675,4 +581,26 @@ export declare namespace useCopyToClipboard {
   type Props = {
     timeout?: number
   }
+}
+
+/** The Tempo "T" mark inside a square, with the T cut out. Inherits `currentColor`. */
+export function TempoMarkBoxed(props: { className?: string }) {
+  return (
+    // biome-ignore lint/a11y/noSvgWithoutTitle: _
+    <svg
+      aria-hidden
+      className={props.className}
+      fill="currentColor"
+      height="28"
+      role="img"
+      viewBox="0 0 28 28"
+      width="28"
+    >
+      <path
+        clipRule="evenodd"
+        d="M0 0h28v28H0V0Zm12.094 21H8.444L11.827 10.173H7.5L8.444 7H20.5l-.944 3.173H15.46L12.094 21Z"
+        fillRule="evenodd"
+      />
+    </svg>
+  )
 }

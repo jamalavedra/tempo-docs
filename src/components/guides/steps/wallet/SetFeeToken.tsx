@@ -1,8 +1,9 @@
 'use client'
 import * as React from 'react'
 import { type Address, isAddress } from 'viem'
-import { useChainId, useConfig, useConnection } from 'wagmi'
+import { useChainId, useConfig, useConnections } from 'wagmi'
 import { Hooks } from 'wagmi/tempo'
+import { isBrowserWalletConnectorId } from '../../../lib/wallets'
 import { Button, ExplorerLink, Step, StringFormatter } from '../../Demo'
 import { alphaUsd, betaUsd, thetaUsd } from '../../tokens'
 import type { DemoStepProps } from '../types'
@@ -26,10 +27,10 @@ const DEFAULT_FEE_TOKEN_OPTION = FEE_TOKEN_OPTIONS[0]
 
 export function SetFeeToken(props: DemoStepProps) {
   const { stepNumber = 1 } = props
-  const { address, connector } = useConnection()
-  const hasNonWebAuthnWallet = Boolean(
-    address && connector?.id !== 'webAuthn' && connector?.id !== 'xyz.tempo',
-  )
+  const connections = useConnections()
+  const walletConnection = connections.find((c) => isBrowserWalletConnectorId(c.connector.id))
+  const address = walletConnection?.accounts[0]
+  const hasNonWebAuthnWallet = Boolean(address)
   const chainId = useChainId()
   const config = useConfig()
 
@@ -60,7 +61,7 @@ export function SetFeeToken(props: DemoStepProps) {
   const isFeeTokenValid = selectedOption.value !== 'other' || isAddress(customFeeToken)
   const defaultChainId = chainId ?? config?.chains?.[0]?.id
 
-  const hasBalance = Boolean(balance && balance > 0n)
+  const hasBalance = Boolean(balance && balance.amount > 0n)
   const hasUserToken = Boolean(userToken.data?.address)
 
   const canSubmit = Boolean(
